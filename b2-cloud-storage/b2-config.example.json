@@ -1,0 +1,5 @@
+{
+  "bucket": "my-project-bucket",
+  "prefix": "",
+  "accountInfoPath": "~/.b2_account_info"
+}
