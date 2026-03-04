@@ -22,7 +22,7 @@ Built on the open [Agent Skills](https://agentskills.io) specification. Compatib
 ### One-liner
 
 ```bash
-git clone https://github.com/yourusername/claude-skill-b2-cloud-storage.git /tmp/b2-skill && cp -r /tmp/b2-skill/b2-cloud-storage ~/.claude/skills/b2-cloud-storage && rm -rf /tmp/b2-skill
+git clone https://github.com/backblaze-b2-samples/claude-skill-b2-cloud-storage.git /tmp/b2-skill && cp -r /tmp/b2-skill/b2-cloud-storage ~/.claude/skills/b2-cloud-storage && rm -rf /tmp/b2-skill
 ```
 
 ### Manual
