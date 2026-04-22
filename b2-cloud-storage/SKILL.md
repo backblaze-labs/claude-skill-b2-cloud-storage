@@ -1,31 +1,43 @@
 ---
 name: b2-cloud-storage
-description: Manage Backblaze B2 cloud storage — list files, audit usage, clean up stale data, review security posture, and manage lifecycle rules. Use when the user mentions B2, Backblaze, object storage buckets, or storage cleanup.
+description: Manage Backblaze B2 cloud storage — list files, audit usage, estimate cost, clean up stale data, review security posture, and manage lifecycle rules. Use when the user mentions B2, Backblaze, object storage buckets, or storage cleanup.
 license: MIT
 compatibility: Requires b2 CLI v4+ (pip install b2) and Python 3.9+.
 metadata:
   author: jdeleon
-  version: "1.0"
-allowed-tools: Bash(b2:*) Bash(python:*) Read Grep Glob
-disable-model-invocation: true
+  version: "1.1"
+allowed-tools: Bash(b2:*) Bash(python:*) Bash(pip:*) Bash(pip3:*) Read Write Grep Glob
 ---
 
 # B2 Cloud Storage Management
 
-Manage Backblaze B2 cloud storage: list files, audit usage, clean up stale data, and review security posture.
+Manage Backblaze B2 cloud storage: list files, audit usage, estimate cost, clean up stale data, and review security posture.
 
 ## Security Rules (MANDATORY)
 
-1. **Never** run `b2 account get` or `b2 key *` — these expose credentials
-2. **Never** display `accountAuthToken`, `applicationKey`, or `accountId` values — if any command output contains these, redact them before showing the user
-3. **Always** run `b2 rm --dry-run` first before any real deletion; require the user to explicitly confirm with "yes" before executing the actual delete
-4. **Never** change a bucket to `allPublic` without warning the user about the security implications and getting explicit confirmation
-5. **Default to read-only operations** — only perform writes/deletes when the user explicitly requests them
-6. **Never** store or write API keys, application keys, or account IDs to any file
+1. **Never** run `b2 account get`, `b2 account clear`, or any `b2 key *` subcommand — these expose or mutate credentials.
+2. **Never** read `~/.b2_account_info` or any file matching `*b2_account_info*` — this is the B2 credential database (SQLite).
+3. **Always** run `b2 rm --dry-run` before any real deletion; show the user what would be deleted and require an explicit "yes" before executing.
+4. **Never** change a bucket to `allPublic` without first warning the user about the security implications and getting explicit confirmation.
+5. **Default to read-only** — only perform writes or deletes when the user explicitly requests them.
+6. **Never** store or write API keys, application keys, or account IDs to any file.
+7. If the user pastes key values into the chat instead of the terminal, warn them immediately and recommend rotating the key. Never echo, store, or reference key values that appear in conversation.
 
-## Project-Level Configuration
+## First-Use Flow
 
-The skill supports per-project B2 configuration. On first use in a project, ask the user which bucket and credentials to use, then save to `.claude/b2-config.json` in the project root:
+1. Check the B2 CLI is installed: `b2 version`. If missing, install (`pip install b2`) — see `references/setup.md` for detail.
+2. Verify the CLI is authorized: `b2 ls`. If it fails with an auth error, walk the user through `references/setup.md`.
+3. Check for a per-project config at `.claude/b2-config.json` in the project root. If missing, ask the user for bucket + prefix and create one.
+
+### Interactive auth note
+`b2 account authorize` (no args) reads keys from an interactive prompt, which agents cannot drive. The user has two options:
+- Run it themselves in the terminal — in Claude Code they can type `!b2 account authorize` to execute directly in the session.
+- Pass the keyID and applicationKey as positional args: `b2 account authorize <keyID> <appKey>` (keys will appear in shell history — less safe).
+- Or set `B2_APPLICATION_KEY_ID` and `B2_APPLICATION_KEY` env vars before running B2 commands (recommended for scripts and CI).
+
+## Project-Level Config
+
+Per-project config at `.claude/b2-config.json`:
 
 ```json
 {
@@ -41,124 +53,49 @@ The skill supports per-project B2 configuration. On first use in a project, ask 
 | `prefix` | Optional prefix to scope all operations (e.g. `data/models/`) |
 | `accountInfoPath` | Path to B2 credential file — allows different keys per project |
 
-### How it works
-1. On activation, check if `.claude/b2-config.json` exists in the current project
-2. If it exists, read it and use the `bucket` and `prefix` as defaults (user can still override per-command)
-3. If `accountInfoPath` is set and differs from the default, export `B2_ACCOUNT_INFO` before running b2 commands:
-   ```bash
-   B2_ACCOUNT_INFO=<accountInfoPath> b2 ls
-   ```
-4. If no config exists, ask the user:
-   - Which bucket do you want to work with?
-   - Do you want to scope to a prefix?
-   - Are you using the default B2 credentials or a separate key for this project?
-5. Save their answers to `.claude/b2-config.json`
+If `accountInfoPath` differs from the default, prepend `B2_ACCOUNT_INFO=<path>` when running b2 commands. This file stores bucket names and paths only — never API keys.
 
-**IMPORTANT**: The config file stores bucket names and file paths only — never API keys or secrets.
+## Common Actions
 
-## Setup & Onboarding
-
-On first use, or if any command fails with an auth error, walk the user through setup:
-
-### Step 1: Check if B2 CLI is installed, install if missing
+### List & search
 ```bash
-b2 version
-```
-If the command is not found, install it:
-```bash
-pip install b2
-```
-If `pip` is not available, try `pip3 install b2`. After install, verify with `b2 version`.
-
-### Step 2: Check if already authorized
-```bash
-b2 ls
-```
-If this returns a bucket list, the user is already set up — skip to project config. If it returns an authorization error, continue to Step 3.
-
-### Step 3: Guide the user to create API keys
-Tell the user:
-
-> You need a Backblaze B2 application key. Here's how to get one:
->
-> 1. Log in at **https://secure.backblaze.com/b2_buckets.htm**
-> 2. Go to **App Keys** in the left sidebar (or visit https://secure.backblaze.com/app_keys.htm)
-> 3. Click **"Add a New Application Key"**
-> 4. Configure the key:
->    - **Name**: anything descriptive (e.g. `claude-code-b2`)
->    - **Bucket access**: select a specific bucket or "All" depending on your needs
->    - **Permissions**: for read-only use, select only `listBuckets`, `listFiles`, `readFiles`. Add `writeFiles`, `deleteFiles` only if you need cleanup/upload capabilities.
-> 5. Click **"Create New Key"**
-> 6. **Copy both values immediately** — the application key is shown only once:
->    - `keyID` (starts with `005...` or similar)
->    - `applicationKey` (the long secret string)
-
-### Step 4: Authorize the CLI
-Ask the user to paste their keyID and applicationKey when prompted:
-```bash
-b2 account authorize
-```
-This prompts interactively for the keyID and applicationKey. Credentials are stored locally in `~/.b2_account_info`.
-
-For a project-specific credential file:
-```bash
-B2_ACCOUNT_INFO=~/.b2_account_info_projectname b2 account authorize
+b2 ls b2://<bucket>                    # top-level
+b2 ls -r b2://<bucket>                 # recursive
+b2 ls -r --json b2://<bucket>          # JSON for scripting
+b2 ls --versions -r --json b2://<b>    # include old versions + hide markers
+b2 ls b2://<bucket>/<prefix>           # prefix-scoped
 ```
 
-**IMPORTANT**: If the user pastes their key values into the chat instead of the terminal prompt, immediately warn them:
-> "I can see your key in the chat. For security, please run `b2 account authorize` directly in your terminal instead. I should not see your application key. Consider rotating this key in the Backblaze console since it was exposed."
-
-Never echo, store, or reference key values that appear in conversation.
-
-### Step 5: Verify
+### Inspect file
 ```bash
-b2 ls
-```
-If buckets appear, setup is complete. Proceed to set up project config.
-
-## Available Actions
-
-### List & Search Objects
-```bash
-b2 ls b2://<bucket>                   # list top-level
-b2 ls -r b2://<bucket>               # list all files recursively
-b2 ls -r --json b2://<bucket>        # JSON output for processing
-b2 ls b2://<bucket>/<prefix>         # filter by prefix
+b2 file info b2id://<fileId>
 ```
 
-### Inspect File Metadata
-```bash
-b2 file info b2id://<fileId>          # full metadata for a file
-```
-
-### Storage Audit
-Run the audit script to get a structured report on storage usage, stale files, large files, and potential duplicates:
+### Storage audit (usage, stale, large, duplicates, cost)
 ```bash
 python scripts/storage_audit.py <bucket>
+python scripts/storage_audit.py <bucket> --json
+python scripts/storage_audit.py <bucket> --stale-days 180 --large-mb 500 --prefix-depth 2
 ```
 
-### Cleanup (Destructive — requires confirmation)
-1. First, always dry-run: `b2 rm -r --dry-run b2://<bucket>/<prefix>`
-2. Show the user what would be deleted
-3. Ask for explicit "yes" confirmation
-4. Only then execute: `b2 rm -r b2://<bucket>/<prefix>`
+Reports live vs. billable storage, unfinished large files, old versions, hide markers, SHA1-based duplicates, and an estimated monthly cost.
 
-### Lifecycle Rules
+### Cleanup (destructive)
+See `references/cleanup-playbook.md`. Never skip the dry-run step.
+
+### Lifecycle rules
 ```bash
-b2 bucket get <bucket>                            # view current rules
-b2 bucket update --lifecycle-rules '<json>' <bucket> allPrivate  # update rules
+b2 bucket get <bucket>
+b2 bucket update --lifecycle-rules '<json>' <bucket> allPrivate
 ```
-Refer to `references/b2-cli-reference.md` for lifecycle rule JSON format.
+Lifecycle rule JSON format is in `references/b2-cli-reference.md`.
 
-### Security Review
-Check these for each bucket:
-- **Bucket type**: `allPrivate` vs `allPublic` (`b2 bucket get`)
-- **Encryption**: server-side encryption settings
-- **CORS rules**: check for overly permissive origins
-- **File lock**: retention/legal hold settings
-- **Lifecycle rules**: ensure data has appropriate expiration
+### Security review
+See `references/security-review.md` for the full checklist (bucket type, SSE, CORS, object lock, replication, lifecycle coverage).
 
 ## References
 
-Read this file for detailed B2 CLI v4 command syntax:
-- `references/b2-cli-reference.md`
+- `references/setup.md` — first-use setup walk-through (install, app-key creation, authorization)
+- `references/cleanup-playbook.md` — safe deletion procedure with dry-run
+- `references/security-review.md` — per-bucket security audit checklist
+- `references/b2-cli-reference.md` — CLI v4 command reference

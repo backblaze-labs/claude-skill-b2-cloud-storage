@@ -1,20 +1,22 @@
 # Claude Skill: Backblaze B2 Cloud Storage Manager
 
-A [Claude Code](https://claude.ai/code) skill for managing [Backblaze B2](https://www.backblaze.com/cloud-storage) cloud storage directly from your terminal — list files, audit buckets, clean up stale data, and review security posture.
+A [Claude Code](https://claude.ai/code) skill for managing [Backblaze B2](https://www.backblaze.com/cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=claudeskill) cloud storage directly from your terminal — list files, audit buckets, clean up stale data, and review security posture.
 
 Built on the open [Agent Skills](https://agentskills.io) specification. Compatible with Claude Code, Codex CLI, Cursor, Gemini CLI, and other skills-compatible agents.
 
 ## Features
 
 - **List & search** objects across buckets with prefix filtering
-- **Storage audit** — analyze usage by prefix, extension, and file age
-- **Stale file detection** — find files older than 90 days
-- **Large file detection** — flag files over 100MB
-- **Duplicate detection** — find same-named files across prefixes
-- **Cleanup with safety** — dry-run preview before any deletion
-- **Security review** — check bucket type, encryption, CORS, file lock
+- **Storage audit** — live vs. billable storage, breakdown by prefix + extension, configurable thresholds
+- **Hidden-cost detection** — surfaces unfinished large uploads, old versions, and hide markers that still bill
+- **Cost estimation** — monthly storage cost + potential savings after cleanup
+- **Duplicate detection** — groups files by `contentSha1` (true duplicates, not same-name)
+- **Stale & large-file flags** — configurable `--stale-days` and `--large-mb` thresholds
+- **JSON output** — `--json` flag for downstream analysis
+- **Cleanup with safety** — mandatory dry-run + explicit "yes" confirmation before any deletion
+- **Security review** — per-bucket checklist (type, SSE, CORS, object lock, replication, lifecycle coverage)
 - **Lifecycle rules** — view and update expiration policies
-- **Guided setup** — auto-installs B2 CLI and walks through API key creation
+- **Guided setup** — walks through CLI install, app-key creation, and authorization
 - **Per-project config** — different buckets and credentials per project
 
 ## Install
@@ -22,7 +24,7 @@ Built on the open [Agent Skills](https://agentskills.io) specification. Compatib
 ### One-liner
 
 ```bash
-git clone https://github.com/backblaze-b2-samples/claude-skill-b2-cloud-storage.git /tmp/b2-skill && cp -r /tmp/b2-skill/b2-cloud-storage ~/.claude/skills/b2-cloud-storage && rm -rf /tmp/b2-skill
+git clone https://github.com/backblaze-labs/claude-skill-b2-cloud-storage.git /tmp/b2-skill && cp -r /tmp/b2-skill/b2-cloud-storage ~/.claude/skills/b2-cloud-storage && rm -rf /tmp/b2-skill
 ```
 
 ### Manual
@@ -39,23 +41,27 @@ ls ~/.claude/skills/b2-cloud-storage/SKILL.md
 
 ## Usage
 
-Invoke the skill in Claude Code by typing `/b2-cloud-storage`, then describe what you want in natural language:
+The skill is auto-invoked when you mention B2 in natural language, or you can call it explicitly with `/b2-cloud-storage`:
 
 ```
-> /b2-cloud-storage
 > help me set up B2
 
-> /b2-cloud-storage
 > list everything in my-bucket
 
-> /b2-cloud-storage
-> audit my-bucket for stale files and duplicates
+> audit my-bucket for stale files, duplicates, and unfinished uploads
 
-> /b2-cloud-storage
 > clean up files older than 90 days in my-bucket/logs
 
-> /b2-cloud-storage
 > run a security review on my public buckets
+```
+
+The audit script can also be run directly:
+
+```bash
+python ~/.claude/skills/b2-cloud-storage/scripts/storage_audit.py <bucket>
+python ~/.claude/skills/b2-cloud-storage/scripts/storage_audit.py <bucket> --json
+python ~/.claude/skills/b2-cloud-storage/scripts/storage_audit.py <bucket> \
+  --stale-days 180 --large-mb 500 --prefix-depth 2
 ```
 
 **Note**: You may need to restart Claude Code after installing the skill for it to be recognized.
@@ -120,13 +126,18 @@ An example config file is included at [`b2-cloud-storage/b2-config.example.json`
 ```
 claude-skill-b2-cloud-storage/
 ├── README.md
+├── .github/workflows/ci.yml             # Lint + tests + frontmatter validation
+├── tests/                               # Unit tests for the audit script
 └── b2-cloud-storage/                    # Copy this folder to ~/.claude/skills/
     ├── SKILL.md                         # Skill definition and instructions
     ├── b2-config.example.json           # Example per-project config
     ├── scripts/
-    │   └── storage_audit.py             # Bucket audit and analysis script
+    │   └── storage_audit.py             # Audit: usage, versions, unfinished, cost
     └── references/
-        └── b2-cli-reference.md          # B2 CLI v4 command quick reference
+        ├── setup.md                     # First-use setup walk-through
+        ├── cleanup-playbook.md          # Safe deletion procedure
+        ├── security-review.md           # Per-bucket security checklist
+        └── b2-cli-reference.md          # B2 CLI v4 command reference
 ```
 
 ## Requirements
@@ -134,7 +145,7 @@ claude-skill-b2-cloud-storage/
 - [Claude Code](https://claude.ai/code) (or any Agent Skills-compatible tool)
 - Python 3.9+
 - B2 CLI v4+ (auto-installed by the skill)
-- A [Backblaze B2](https://www.backblaze.com/cloud-storage) account
+- A [Backblaze B2](https://www.backblaze.com/cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=claudeskill) account
 
 ## License
 
