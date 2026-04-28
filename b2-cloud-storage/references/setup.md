@@ -9,6 +9,7 @@ b2 version
 ```
 
 If the command is not found:
+
 ```bash
 pip install b2
 ```
@@ -48,17 +49,21 @@ Tell the user:
 `b2 account authorize` reads from an interactive prompt. Agents cannot drive that prompt. The user should pick one of:
 
 **Option A — Interactive (recommended for humans).** In Claude Code, the user can run it in-session via the `!` prefix:
-```
+
+```bash
 !b2 account authorize
 ```
+
 This executes directly in the terminal; keys stay out of the chat transcript.
 
 **Option B — Positional args (keys land in shell history).**
+
 ```bash
 b2 account authorize <keyID> <applicationKey>
 ```
 
 **Option C — Env vars (best for CI / scripts).**
+
 ```bash
 export B2_APPLICATION_KEY_ID=<keyID>
 export B2_APPLICATION_KEY=<applicationKey>
@@ -66,9 +71,11 @@ b2 ls
 ```
 
 **Per-project credential file.** To keep keys isolated per project:
+
 ```bash
 B2_ACCOUNT_INFO=~/.b2_account_info_myproject b2 account authorize <keyID> <appKey>
 ```
+
 Then set `accountInfoPath: "~/.b2_account_info_myproject"` in `.claude/b2-config.json`.
 
 ## Key exposure in chat
@@ -90,6 +97,7 @@ If buckets appear, setup is done. Proceed to create the per-project config.
 ## Step 6 — Project config
 
 Ask the user:
+
 - Which bucket should be the default for this project?
 - Should operations be scoped to a prefix (e.g. `data/models/`)?
 - Are they using the default credential file or a per-project one?

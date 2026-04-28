@@ -1,8 +1,39 @@
 # Claude Skill: Backblaze B2 Cloud Storage Manager
 
+[![CI](https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/actions/workflows/ci.yml/badge.svg)](https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
+[![Python 3.10–3.14](https://img.shields.io/badge/python-3.10%E2%80%933.14-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![Spell-checked: cspell](https://img.shields.io/badge/spell--check-cspell-blue)](https://cspell.org/)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-8B5CF6?logo=anthropic&logoColor=white)](https://claude.ai/code)
+[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-spec-FF6B35)](https://agentskills.io)
+[![Backblaze B2](https://img.shields.io/badge/Backblaze-B2-E8231A?logo=backblaze&logoColor=white)](https://www.backblaze.com/cloud-storage)
+[![GitHub stars](https://img.shields.io/github/stars/backblaze-labs/claude-skill-b2-cloud-storage?style=flat&logo=github)](https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/stargazers)
+
 A [Claude Code](https://claude.ai/code) skill for managing [Backblaze B2](https://www.backblaze.com/cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=claudeskill) cloud storage directly from your terminal — list files, audit buckets, clean up stale data, and review security posture.
 
 Built on the open [Agent Skills](https://agentskills.io) specification. Compatible with Claude Code, Codex CLI, Cursor, Gemini CLI, and other skills-compatible agents.
+
+<details>
+<summary>What each badge means</summary>
+
+| Badge | Meaning |
+|---|---|
+| **CI** | GitHub Actions runs lint, tests, frontmatter validation, and pre-commit on every PR across Python 3.10–3.14. |
+| **License: MIT** | Permissive open-source license — free to fork, modify, and ship. |
+| **Python 3.10–3.14** | Tested on every currently-supported CPython version. Python 3.9 reached EOL in October 2025 and is no longer in the matrix. |
+| **Ruff** | Linted and formatted with [Astral's Ruff](https://github.com/astral-sh/ruff). Enforced via pre-commit. |
+| **Checked with mypy** | Static type-checked. The audit script's public surface and the B2 JSON inputs are fully annotated. |
+| **pre-commit** | Hooks for whitespace, JSON/YAML validity, ruff, markdownlint, yamllint, cspell, and mypy run on every commit. |
+| **Spell-checked: cspell** | Markdown and Python prose are spell-checked with a project-specific allowlist. |
+| **Claude Code** | First-class compatibility with [Claude Code](https://claude.ai/code) — auto-invoked when you mention B2 in chat. |
+| **Agent Skills** | Conforms to the open [Agent Skills](https://agentskills.io) `SKILL.md` specification — works in any compatible agent (Codex CLI, Cursor, Gemini CLI, etc.). |
+| **Backblaze B2** | Targets the [Backblaze B2 Cloud Storage](https://www.backblaze.com/cloud-storage) platform via the official `b2` CLI v4+. |
+| **GitHub stars** | Community signal — give it a ⭐ if it's useful. |
+
+</details>
 
 ## Features
 
@@ -21,17 +52,76 @@ Built on the open [Agent Skills](https://agentskills.io) specification. Compatib
 
 ## Install
 
-### One-liner
+Pick whichever fits your tooling. All methods install the same skill folder; only the delivery differs.
+
+### 1. `npx skills add` — open spec CLI (recommended cross-agent)
+
+Works with any [Agent Skills](https://agentskills.io)-compatible client (Claude Code, Codex CLI, Cursor, Gemini CLI, Goose, OpenCode, etc.).
 
 ```bash
-git clone https://github.com/backblaze-labs/claude-skill-b2-cloud-storage.git /tmp/b2-skill && cp -r /tmp/b2-skill/b2-cloud-storage ~/.claude/skills/b2-cloud-storage && rm -rf /tmp/b2-skill
+npx skills add backblaze-labs/claude-skill-b2-cloud-storage -g    # global
+npx skills add backblaze-labs/claude-skill-b2-cloud-storage       # current project only
 ```
 
-### Manual
+The `-g` flag installs system-wide (`~/.claude/skills/` for Claude Code). Without it, the skill is scoped to the current project.
+
+### 2. Claude Code plugin marketplace (recommended for Claude Code users)
+
+Inside Claude Code:
+
+```text
+/plugin marketplace add backblaze-labs/claude-skill-b2-cloud-storage
+/plugin install b2-cloud-storage
+```
+
+This reads the `.claude-plugin/marketplace.json` in the repo and installs the skill plus any future plugins shipped from the same source.
+
+### 3. GitHub Release tarball
+
+**Latest** (always points at the most recent release):
+
+```bash
+curl -L https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/releases/latest/download/b2-cloud-storage.tar.gz \
+  | tar xz -C ~/.claude/skills/
+```
+
+**Pinned to a specific version** (deterministic deploys, air-gapped environments):
+
+```bash
+# Substitute the tag you want — see https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/releases
+TAG=vX.Y.Z
+curl -L "https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/releases/download/${TAG}/b2-cloud-storage-${TAG}.tar.gz" \
+  | tar xz -C ~/.claude/skills/
+```
+
+Each release ships four artifacts: an unversioned `b2-cloud-storage.tar.gz` / `.zip` (used by the latest URL) and a `-<tag>` versioned pair for pinning.
+
+### 4. Manual git clone
+
+When you want to edit the skill in place or test changes locally:
+
+```bash
+git clone https://github.com/backblaze-labs/claude-skill-b2-cloud-storage.git /tmp/b2-skill \
+  && cp -r /tmp/b2-skill/b2-cloud-storage ~/.claude/skills/b2-cloud-storage \
+  && rm -rf /tmp/b2-skill
+```
+
+Or, if you've already cloned the repo, from the repo root:
 
 ```bash
 cp -r b2-cloud-storage ~/.claude/skills/b2-cloud-storage
 ```
+
+### 5. Marketplace-specific CLIs
+
+Once the skill is listed on the respective directory:
+
+```bash
+npx @skill-hub/cli install b2-cloud-storage      # SkillHub
+lhm install b2-cloud-storage                     # LobeHub (lobehub-cli)
+```
+
+See [RELEASE.md](RELEASE.md) for the full list of directories and their listing status.
 
 ### Verify
 
@@ -39,11 +129,13 @@ cp -r b2-cloud-storage ~/.claude/skills/b2-cloud-storage
 ls ~/.claude/skills/b2-cloud-storage/SKILL.md
 ```
 
+Then in Claude Code, restart the session and try `> audit my-bucket for stale files` — the skill is auto-invoked when you mention B2 in natural language.
+
 ## Usage
 
 The skill is auto-invoked when you mention B2 in natural language, or you can call it explicitly with `/b2-cloud-storage`:
 
-```
+```text
 > help me set up B2
 
 > list everything in my-bucket
@@ -123,7 +215,7 @@ An example config file is included at [`b2-cloud-storage/b2-config.example.json`
 
 ## File Structure
 
-```
+```text
 claude-skill-b2-cloud-storage/
 ├── README.md
 ├── .github/workflows/ci.yml             # Lint + tests + frontmatter validation
@@ -143,7 +235,7 @@ claude-skill-b2-cloud-storage/
 ## Requirements
 
 - [Claude Code](https://claude.ai/code) (or any Agent Skills-compatible tool)
-- Python 3.9+
+- Python 3.10+ (CI tests against 3.10 – 3.14)
 - B2 CLI v4+ (auto-installed by the skill)
 - A [Backblaze B2](https://www.backblaze.com/cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=claudeskill) account
 

@@ -7,6 +7,7 @@ Destructive operations. Never skip the dry-run step.
 1. **Identify what to delete.** Typically this follows an audit (`python scripts/storage_audit.py <bucket>`) that surfaced stale files, old versions, unfinished uploads, or duplicates.
 
 2. **Run a dry-run first.** This lists what *would* be deleted without deleting anything:
+
    ```bash
    b2 rm -r --dry-run b2://<bucket>/<prefix>
    ```
@@ -16,6 +17,7 @@ Destructive operations. Never skip the dry-run step.
 4. **Ask for explicit "yes" confirmation.** Not "sure?" or "sounds good" — the user must type "yes". If they say anything else, abort.
 
 5. **Execute the real deletion.**
+
    ```bash
    b2 rm -r b2://<bucket>/<prefix>
    ```
@@ -32,6 +34,7 @@ b2 file large unfinished cancel <bucket>                # cancels all unfinished
 ```
 
 Individual unfinished files can be cancelled by fileId:
+
 ```bash
 b2 file large unfinished cancel --file-id <fileId>
 ```
@@ -39,6 +42,7 @@ b2 file large unfinished cancel --file-id <fileId>
 ### Old versions
 
 By default, B2 keeps every version. To remove old versions of a specific file:
+
 ```bash
 b2 ls --versions b2://<bucket>/<path>                   # see all versions
 b2 rm b2id://<oldFileId>                                # delete a specific version
@@ -73,6 +77,7 @@ b2 bucket delete <bucket>
 ```
 
 Fails if the bucket is not empty. To empty it first:
+
 ```bash
 b2 rm -r --dry-run b2://<bucket>/                       # preview ALL contents
 b2 rm -r b2://<bucket>/                                 # empty it

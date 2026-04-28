@@ -10,10 +10,12 @@ b2 account authorize <keyID> <appKey> # non-interactive
 ```
 
 Credentials stored in `~/.b2_account_info` (SQLite). Also supports env vars:
+
 - `B2_APPLICATION_KEY_ID`
 - `B2_APPLICATION_KEY`
 
 Per-project credential file:
+
 ```bash
 B2_ACCOUNT_INFO=~/.b2_account_info_projectname b2 account authorize
 B2_ACCOUNT_INFO=~/.b2_account_info_projectname b2 ls
@@ -81,6 +83,7 @@ B2_ACCOUNT_INFO=~/.b2_account_info_projectname b2 ls
 ```
 
 Apply with:
+
 ```bash
 b2 bucket update --lifecycle-rules '[{"daysFromHidingToDeleting":1,"daysFromUploadingToHiding":90,"fileNamePrefix":"logs/"}]' <bucket> allPrivate
 ```

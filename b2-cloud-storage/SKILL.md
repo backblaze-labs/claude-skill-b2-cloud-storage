@@ -2,10 +2,10 @@
 name: b2-cloud-storage
 description: Manage Backblaze B2 cloud storage — list files, audit usage, estimate cost, clean up stale data, review security posture, and manage lifecycle rules. Use when the user mentions B2, Backblaze, object storage buckets, or storage cleanup.
 license: MIT
-compatibility: Requires b2 CLI v4+ (pip install b2) and Python 3.9+.
+compatibility: Requires b2 CLI v4+ (pip install b2) and Python 3.10+.
 metadata:
   author: jdeleon
-  version: "1.1"
+  version: "1.1.0"
 allowed-tools: Bash(b2:*) Bash(python:*) Bash(pip:*) Bash(pip3:*) Read Write Grep Glob
 ---
 
@@ -30,7 +30,9 @@ Manage Backblaze B2 cloud storage: list files, audit usage, estimate cost, clean
 3. Check for a per-project config at `.claude/b2-config.json` in the project root. If missing, ask the user for bucket + prefix and create one.
 
 ### Interactive auth note
+
 `b2 account authorize` (no args) reads keys from an interactive prompt, which agents cannot drive. The user has two options:
+
 - Run it themselves in the terminal — in Claude Code they can type `!b2 account authorize` to execute directly in the session.
 - Pass the keyID and applicationKey as positional args: `b2 account authorize <keyID> <appKey>` (keys will appear in shell history — less safe).
 - Or set `B2_APPLICATION_KEY_ID` and `B2_APPLICATION_KEY` env vars before running B2 commands (recommended for scripts and CI).
@@ -58,6 +60,7 @@ If `accountInfoPath` differs from the default, prepend `B2_ACCOUNT_INFO=<path>` 
 ## Common Actions
 
 ### List & search
+
 ```bash
 b2 ls b2://<bucket>                    # top-level
 b2 ls -r b2://<bucket>                 # recursive
@@ -67,11 +70,13 @@ b2 ls b2://<bucket>/<prefix>           # prefix-scoped
 ```
 
 ### Inspect file
+
 ```bash
 b2 file info b2id://<fileId>
 ```
 
 ### Storage audit (usage, stale, large, duplicates, cost)
+
 ```bash
 python scripts/storage_audit.py <bucket>
 python scripts/storage_audit.py <bucket> --json
@@ -81,16 +86,20 @@ python scripts/storage_audit.py <bucket> --stale-days 180 --large-mb 500 --prefi
 Reports live vs. billable storage, unfinished large files, old versions, hide markers, SHA1-based duplicates, and an estimated monthly cost.
 
 ### Cleanup (destructive)
+
 See `references/cleanup-playbook.md`. Never skip the dry-run step.
 
 ### Lifecycle rules
+
 ```bash
 b2 bucket get <bucket>
 b2 bucket update --lifecycle-rules '<json>' <bucket> allPrivate
 ```
+
 Lifecycle rule JSON format is in `references/b2-cli-reference.md`.
 
 ### Security review
+
 See `references/security-review.md` for the full checklist (bucket type, SSE, CORS, object lock, replication, lifecycle coverage).
 
 ## References
