@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires b2 CLI v4+ (pip install b2) and Python 3.10+.
 metadata:
   author: jdeleon
-  version: "1.1.0"
+  version: "1.2.0"
 allowed-tools: Bash(b2:*) Bash(python:*) Bash(pip:*) Bash(pip3:*) Read Write Grep Glob
 ---
 

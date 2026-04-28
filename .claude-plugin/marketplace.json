@@ -7,16 +7,22 @@
   },
   "metadata": {
     "description": "Backblaze B2 cloud storage management skill for Claude Code and other Agent Skills-compatible tools.",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "plugins": [
     {
       "name": "b2-cloud-storage",
       "source": "./b2-cloud-storage",
-      "version": "1.1.0",
-      "description": "Manage Backblaze B2 cloud storage from the terminal — list, audit, cleanup, security review, lifecycle.",
+      "version": "1.2.0",
+      "description": "Manage Backblaze B2 cloud storage from the terminal \u2014 list, audit, cleanup, security review, lifecycle.",
       "category": "storage",
-      "tags": ["backblaze", "b2", "cloud-storage", "object-storage", "claude-skills"],
+      "tags": [
+        "backblaze",
+        "b2",
+        "cloud-storage",
+        "object-storage",
+        "claude-skills"
+      ],
       "homepage": "https://github.com/backblaze-labs/claude-skill-b2-cloud-storage",
       "license": "MIT",
       "author": {

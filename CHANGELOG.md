@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-04-28
+
 ### Added
 
 - `.claude-plugin/marketplace.json` — Claude Code plugin marketplace manifest, enabling auto-discovery on
@@ -72,6 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests for audit logic.
 - CI workflow (lint + tests + frontmatter validation on Python 3.11).
 
-[Unreleased]: https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/releases/tag/v1.0.0
