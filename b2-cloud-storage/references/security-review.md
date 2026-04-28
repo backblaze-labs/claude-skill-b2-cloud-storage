@@ -24,6 +24,7 @@ Encryption is always at-rest; this check is whether a *default* is set for new u
 Each rule has `allowedOrigins`, `allowedOperations`, `allowedHeaders`, `exposeHeaders`, `maxAgeSeconds`.
 
 **Flag** any rule that combines:
+
 - `allowedOrigins: ["*"]` AND
 - Any write operation in `allowedOperations` (`b2_upload_file`, `b2_upload_part`, `b2_delete_file_version`, or the S3-compat equivalents)
 
@@ -32,6 +33,7 @@ Wildcard + read-only is usually fine for public assets; wildcard + write is almo
 ### 4. Object Lock / default retention (`defaultRetention`, `fileLockEnabled`)
 
 If `fileLockEnabled: true`:
+
 - `mode: "governance"` — users with `bypassGovernance` permission can delete.
 - `mode: "compliance"` — cannot be removed until the retention period expires. Irreversible.
 - `period` — how long retention applies.
@@ -47,12 +49,14 @@ Look at each rule's `fileNamePrefix` + `daysFromUploadingToHiding` + `daysFromHi
 ### 6. Replication (`b2 replication status <bucket>`)
 
 For buckets with replication sources/targets configured:
+
 - Confirm the target bucket is owned by an expected account
 - Confirm replication key has only the permissions it needs
 
 ### 7. Access key scope (via `b2 account get-info` — but **do not run this** per the skill's security rules)
 
 Skip automated checks here. Instead, remind the user:
+
 - Read-only app keys for humans / CI that only needs to consume data
 - Write keys should be scoped to the specific bucket, not "All"
 - Rotate keys periodically
@@ -61,7 +65,7 @@ Skip automated checks here. Instead, remind the user:
 
 Report per-bucket findings in this shape:
 
-```
+```text
 Bucket: <name>
   Type: allPrivate ✓
   Default SSE: SSE-B2 AES256 ✓

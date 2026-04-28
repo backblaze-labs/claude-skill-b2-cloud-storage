@@ -3,23 +3,32 @@
 Usage: python tests/validate_frontmatter.py <path-to-SKILL.md>
 """
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+from typing import Any
 
 import yaml
 
-REQUIRED = ["name", "description", "compatibility", "allowed-tools"]
+REQUIRED: list[str] = ["name", "description", "compatibility", "allowed-tools"]
 
 
-def load_frontmatter(path):
+def load_frontmatter(path: str) -> dict[str, Any]:
     text = Path(path).read_text()
     if not text.startswith("---"):
         raise SystemExit(f"{path}: no frontmatter")
-    _, fm, _ = text.split("---", 2)
-    return yaml.safe_load(fm)
+    closing = text.find("---", 3)
+    if closing == -1:
+        raise SystemExit(f"{path}: missing closing frontmatter delimiter")
+    fm = text[3:closing]
+    parsed = yaml.safe_load(fm)
+    if not isinstance(parsed, dict):
+        raise SystemExit(f"{path}: frontmatter is not a mapping")
+    return parsed
 
 
-def main():
+def main() -> None:
     if len(sys.argv) != 2:
         raise SystemExit("Usage: validate_frontmatter.py <SKILL.md>")
     fm = load_frontmatter(sys.argv[1])

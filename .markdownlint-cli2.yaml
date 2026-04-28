@@ -1,0 +1,30 @@
+config:
+  default: true
+
+  # Line length: long URLs and tables make this noisy.
+  MD013: false
+
+  # Allow inline HTML (badges, anchors).
+  MD033: false
+
+  # Don't require the first line to be a top-level heading
+  # (some reference docs start with a section heading).
+  MD041: false
+
+  # Bare URLs are fine in code blocks and references.
+  MD034: false
+
+  # Trailing punctuation in headings is OK.
+  MD026: false
+
+  # Multiple consecutive blank lines: allow up to 2.
+  MD012:
+    maximum: 2
+
+globs:
+  - "**/*.md"
+
+ignores:
+  - "node_modules/**"
+  - ".github/PULL_REQUEST_TEMPLATE.md"
+  - "CHANGELOG.md"
