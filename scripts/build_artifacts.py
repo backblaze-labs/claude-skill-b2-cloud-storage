@@ -24,8 +24,9 @@ import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-SKILL_DIR = REPO / "b2-cloud-storage"
+SKILL_DIR = REPO / "skills" / "b2-cloud-storage"
 DIST = REPO / "dist"
+ARCHIVE_ROOT = "b2-cloud-storage"
 
 # Patterns to keep out of release artifacts. These are dev-time noise that
 # should never ship to skill consumers.
@@ -63,14 +64,15 @@ def build(tag: str) -> list[Path]:
     for stem in (f"b2-cloud-storage-{tag}", "b2-cloud-storage"):
         tarball = DIST / f"{stem}.tar.gz"
         with tarfile.open(tarball, "w:gz") as tf:
-            tf.add(SKILL_DIR, arcname="b2-cloud-storage", filter=tar_filter)
+            tf.add(SKILL_DIR, arcname=ARCHIVE_ROOT, filter=tar_filter)
         outputs.append(tarball)
 
         archive = DIST / f"{stem}.zip"
         with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
             for path in sorted(SKILL_DIR.rglob("*")):
                 if path.is_file() and not is_excluded(path):
-                    zf.write(path, path.relative_to(REPO))
+                    arcname = Path(ARCHIVE_ROOT) / path.relative_to(SKILL_DIR)
+                    zf.write(path, arcname.as_posix())
         outputs.append(archive)
 
     return outputs

@@ -47,7 +47,7 @@ Built on the open [Agent Skills](https://agentskills.io) specification. Compatib
 - **Cleanup with safety** — mandatory dry-run + explicit "yes" confirmation before any deletion
 - **Security review** — per-bucket checklist (type, SSE, CORS, object lock, replication, lifecycle coverage)
 - **Lifecycle rules** — view and update expiration policies
-- **Guided setup** — walks through CLI install, app-key creation, and authorization
+- **Guided setup** — checks for a user-installed CLI, then walks through app-key creation and authorization
 - **Per-project config** — different buckets and credentials per project
 
 ## Install
@@ -102,14 +102,14 @@ When you want to edit the skill in place or test changes locally:
 
 ```bash
 git clone https://github.com/backblaze-labs/claude-skill-b2-cloud-storage.git /tmp/b2-skill \
-  && cp -r /tmp/b2-skill/b2-cloud-storage ~/.claude/skills/b2-cloud-storage \
+  && cp -r /tmp/b2-skill/skills/b2-cloud-storage ~/.claude/skills/b2-cloud-storage \
   && rm -rf /tmp/b2-skill
 ```
 
 Or, if you've already cloned the repo, from the repo root:
 
 ```bash
-cp -r b2-cloud-storage ~/.claude/skills/b2-cloud-storage
+cp -r skills/b2-cloud-storage ~/.claude/skills/b2-cloud-storage
 ```
 
 ### 5. Marketplace-specific CLIs
@@ -160,9 +160,9 @@ python ~/.claude/skills/b2-cloud-storage/scripts/storage_audit.py <bucket> \
 
 ## Setup & API Keys
 
-The skill handles setup automatically on first use:
+The skill verifies prerequisites and guides authorization on first use:
 
-1. **Installs B2 CLI** if not found (`pip install b2`)
+1. **Checks for B2 CLI v4+** and asks you to install it if missing
 2. **Checks authorization** — skips ahead if already configured
 3. **Guides API key creation**:
    - Log in at [secure.backblaze.com](https://secure.backblaze.com/app_keys.htm)
@@ -200,7 +200,7 @@ B2_ACCOUNT_INFO=~/.b2_account_info_myproject b2 account authorize
 
 Then set `accountInfoPath` to `~/.b2_account_info_myproject` in your project's config.
 
-An example config file is included at [`b2-cloud-storage/b2-config.example.json`](b2-cloud-storage/b2-config.example.json).
+An example config file is included at [`skills/b2-cloud-storage/b2-config.example.json`](skills/b2-cloud-storage/b2-config.example.json).
 
 **Note**: This config file stores bucket names and file paths only — never API keys or secrets. Add `.claude/b2-config.json` to your `.gitignore`.
 
@@ -220,23 +220,24 @@ claude-skill-b2-cloud-storage/
 ├── README.md
 ├── .github/workflows/ci.yml             # Lint + tests + frontmatter validation
 ├── tests/                               # Unit tests for the audit script
-└── b2-cloud-storage/                    # Copy this folder to ~/.claude/skills/
-    ├── SKILL.md                         # Skill definition and instructions
-    ├── b2-config.example.json           # Example per-project config
-    ├── scripts/
-    │   └── storage_audit.py             # Audit: usage, versions, unfinished, cost
-    └── references/
-        ├── setup.md                     # First-use setup walk-through
-        ├── cleanup-playbook.md          # Safe deletion procedure
-        ├── security-review.md           # Per-bucket security checklist
-        └── b2-cli-reference.md          # B2 CLI v4 command reference
+└── skills/
+    └── b2-cloud-storage/                # Copy this folder to ~/.claude/skills/
+        ├── SKILL.md                     # Skill definition and instructions
+        ├── b2-config.example.json       # Example per-project config
+        ├── scripts/
+        │   └── storage_audit.py         # Audit: usage, versions, unfinished, cost
+        └── references/
+            ├── setup.md                 # First-use setup walk-through
+            ├── cleanup-playbook.md      # Safe deletion procedure
+            ├── security-review.md       # Per-bucket security checklist
+            └── b2-cli-reference.md      # B2 CLI v4 command reference
 ```
 
 ## Requirements
 
 - [Claude Code](https://claude.ai/code) (or any Agent Skills-compatible tool)
 - Python 3.10+ (CI tests against 3.10 – 3.14)
-- B2 CLI v4+ (auto-installed by the skill)
+- User-installed B2 CLI v4+
 - A [Backblaze B2](https://www.backblaze.com/cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=claudeskill) account
 
 ## License

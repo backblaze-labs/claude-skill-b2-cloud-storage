@@ -46,7 +46,7 @@ repos:
     rev: v1.13.0
     hooks:
       - id: mypy
-        files: ^(b2-cloud-storage/scripts|tests)/.*\.py$
+        files: ^(skills/b2-cloud-storage/scripts|tests)/.*\.py$
         additional_dependencies: ["pyyaml", "types-PyYAML"]
 
   # Optional faster alternative to mypy when `ty` stabilizes (Astral, currently preview):

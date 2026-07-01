@@ -10,7 +10,7 @@ Exits 0 if every version field equals the given version, non-zero otherwise.
 Checked fields:
     - .claude-plugin/marketplace.json    metadata.version
     - .claude-plugin/marketplace.json    plugins[].version  (every entry)
-    - b2-cloud-storage/SKILL.md          frontmatter metadata.version
+    - skills/b2-cloud-storage/SKILL.md   frontmatter metadata.version
 
 Used by .github/workflows/release.yml as the gate before building artifacts,
 and by humans before running `git tag` if they want belt-and-suspenders.
@@ -25,7 +25,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 MARKETPLACE = REPO / ".claude-plugin" / "marketplace.json"
-SKILL_MD = REPO / "b2-cloud-storage" / "SKILL.md"
+SKILL_MD = REPO / "skills" / "b2-cloud-storage" / "SKILL.md"
 
 SKILL_VERSION_RE = re.compile(r'^\s*version:\s*"([^"]+)"', re.MULTILINE)
 
