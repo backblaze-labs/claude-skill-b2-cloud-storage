@@ -13,7 +13,8 @@ DOCS_WITH_INSTALL_GUIDANCE = [
 ]
 
 UNPINNED_B2_INSTALL = re.compile(
-    r"\b(?:python3?\s+-m\s+)?pip3?\s+install\s+(?:--\S+\s+)*b2(?=\s|$)",
+    r"\b(?:python3?\s+-m\s+)?pip3?\s+install\s+"
+    r"(?:--\S+\s+)*b2(?:\[[^\]\s]+\])?(?=$|[\s`'\"),.;:\]}!?])",
     re.IGNORECASE,
 )
 
@@ -45,6 +46,11 @@ def test_unpinned_b2_install_pattern_allows_pinned_package_specs() -> None:
     assert UNPINNED_B2_INSTALL.search("pip install b2")
     assert UNPINNED_B2_INSTALL.search("pip3 install --user b2")
     assert UNPINNED_B2_INSTALL.search("python -m pip install b2")
+    assert UNPINNED_B2_INSTALL.search("`pip install b2`")
+    assert UNPINNED_B2_INSTALL.search("Install with pip install b2, then verify")
+    assert UNPINNED_B2_INSTALL.search("pip install b2.")
+    assert UNPINNED_B2_INSTALL.search("pip install b2[crt]")
     assert not UNPINNED_B2_INSTALL.search("pip install b2==4.0.0 --hash=sha256:abc")
+    assert not UNPINNED_B2_INSTALL.search("pip install b2[crt]==4.0.0 --hash=sha256:abc")
     assert not UNPINNED_B2_INSTALL.search("pip install b2~=4.0")
     assert not UNPINNED_B2_INSTALL.search("pip install b2>=4")
