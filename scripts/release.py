@@ -18,6 +18,7 @@ Optional flags:
 Updates version in:
   - skills/b2-cloud-storage/SKILL.md  (frontmatter `metadata.version`)
   - .claude-plugin/marketplace.json  (`metadata.version` and every `plugins[].version`)
+  - skills/b2-cloud-storage/.claude-plugin/plugin.json  (`version`)
 
 Rotates CHANGELOG.md:
   - Moves the body of `## [Unreleased]` into a new `## [X.Y.Z] - YYYY-MM-DD` section.
@@ -42,6 +43,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO / "skills" / "b2-cloud-storage" / "SKILL.md"
 MARKETPLACE = REPO / ".claude-plugin" / "marketplace.json"
+PLUGIN_JSON = REPO / "skills" / "b2-cloud-storage" / ".claude-plugin" / "plugin.json"
 CHANGELOG = REPO / "CHANGELOG.md"
 
 SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
@@ -94,6 +96,12 @@ def update_marketplace_json(new_version: str) -> None:
     for plugin in data.get("plugins", []):
         plugin["version"] = new_version
     MARKETPLACE.write_text(json.dumps(data, indent=2) + "\n")
+
+
+def update_plugin_json(new_version: str) -> None:
+    data = json.loads(PLUGIN_JSON.read_text())
+    data["version"] = new_version
+    PLUGIN_JSON.write_text(json.dumps(data, indent=2) + "\n")
 
 
 def rotate_changelog(new_version: str, previous_version: str) -> bool:
@@ -199,10 +207,12 @@ def main() -> None:
 
     update_skill_md(new_version)
     update_marketplace_json(new_version)
+    update_plugin_json(new_version)
     print(f"  Updated  {SKILL_MD.relative_to(REPO)}")
     print(f"  Updated  {MARKETPLACE.relative_to(REPO)}")
+    print(f"  Updated  {PLUGIN_JSON.relative_to(REPO)}")
 
-    files_to_stage: list[Path] = [SKILL_MD, MARKETPLACE]
+    files_to_stage: list[Path] = [SKILL_MD, MARKETPLACE, PLUGIN_JSON]
     if not args.no_changelog and rotate_changelog(new_version, current):
         files_to_stage.append(CHANGELOG)
 

@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to full commit SHAs, checkout credentials are not persisted when unused, non-release
   workflows declare read-only token permissions, and release publishing uses the GitHub CLI
   instead of a third-party action in the write-token job.
+- `skills/b2-cloud-storage/.claude-plugin/plugin.json` plugin manifest, so the skill can be
+  submitted to the Anthropic community plugin marketplace and pass `claude plugin validate`.
+  Its `version` is kept in sync by `release.py` and enforced by `check_version.py`.
 
 ### Changed
 

@@ -11,6 +11,7 @@ Checked fields:
     - .claude-plugin/marketplace.json    metadata.version
     - .claude-plugin/marketplace.json    plugins[].version  (every entry)
     - skills/b2-cloud-storage/SKILL.md   frontmatter metadata.version
+    - skills/b2-cloud-storage/.claude-plugin/plugin.json  version
 
 Used by .github/workflows/release.yml as the gate before building artifacts,
 and by humans before running `git tag` if they want belt-and-suspenders.
@@ -26,6 +27,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 MARKETPLACE = REPO / ".claude-plugin" / "marketplace.json"
 SKILL_MD = REPO / "skills" / "b2-cloud-storage" / "SKILL.md"
+PLUGIN_JSON = REPO / "skills" / "b2-cloud-storage" / ".claude-plugin" / "plugin.json"
 
 SKILL_VERSION_RE = re.compile(r'^\s*version:\s*"([^"]+)"', re.MULTILINE)
 
@@ -50,6 +52,9 @@ def collect_versions() -> dict[str, str]:
     text = SKILL_MD.read_text()
     m = SKILL_VERSION_RE.search(text)
     versions["SKILL.md metadata.version"] = m.group(1) if m else "<not found>"
+
+    plugin = json.loads(PLUGIN_JSON.read_text())
+    versions["plugin.json version"] = str(plugin.get("version", "<missing>"))
 
     return versions
 
