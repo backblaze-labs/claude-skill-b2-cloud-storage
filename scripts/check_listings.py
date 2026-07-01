@@ -31,63 +31,22 @@ import sys
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 try:
     from playwright.sync_api import Page, sync_playwright
     from playwright.sync_api import TimeoutError as PlaywrightTimeout
 except ImportError:  # pragma: no cover
-    sys.exit(
-        "playwright is not installed. Run:\n"
-        "    pip install playwright && playwright install chromium"
-    )
+    Page = Any
+    PlaywrightTimeout = TimeoutError
+    sync_playwright = None
+
+from listing_catalog import BROWSER_PROBES, REPO_SLUG, SKILL_NAME, BrowserProbeSpec
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCREENSHOT_DIR = REPO_ROOT / "dist" / "listing-checks"
 
-REPO_SLUG = "backblaze-labs/claude-skill-b2-cloud-storage"
-SKILL_NAME = "b2-cloud-storage"
-
-# Phrases we accept as proof of listing. Any one match flips status to "live".
-# Bare "backblaze" was too broad — query echoes ("matching 'backblaze'") tripped it.
-MATCH_TERMS = (
-    "backblaze-labs/claude-skill-b2-cloud-storage",
-    "claude-skill-b2-cloud-storage",
-    "b2-cloud-storage",
-)
-
 Status = Literal["live", "not_found", "error", "blocked"]
-
-# Selectors tried in order when a probe needs interactive search. The first
-# locator that becomes visible wins. Add per-probe overrides via Probe.search_locators.
-DEFAULT_SEARCH_LOCATORS: tuple[str, ...] = (
-    "input[type='search']",
-    "[role='searchbox']",
-    "input[placeholder*='Search' i]",
-    "input[name='q']",
-    "input[name='query']",
-    "input[aria-label*='Search' i]",
-)
-
-
-@dataclass
-class Probe:
-    name: str
-    url: str
-    # Optional CSS/text selector to wait for before sampling page content.
-    # Leave None to use `networkidle`.
-    wait_for: str | None = None
-    # Force-fail on these terms appearing (e.g. captcha, "no results found").
-    negative_terms: tuple[str, ...] = ()
-    # Per-probe override of the default match terms.
-    match_terms: tuple[str, ...] = MATCH_TERMS
-    # Some directories block headless / unknown UAs. Set True to use a longer timeout.
-    slow: bool = False
-    # If set, navigate to `url` (no query string), then type this term into a
-    # search input and press Enter. Use for SPAs that ignore `?q=` URL params.
-    search_query: str | None = None
-    # Override search input selectors when the defaults miss.
-    search_locators: tuple[str, ...] = DEFAULT_SEARCH_LOCATORS
 
 
 @dataclass
@@ -103,177 +62,7 @@ class Result:
     extras: dict[str, str] = field(default_factory=dict)
 
 
-PROBES: tuple[Probe, ...] = (
-    # URL-query directories (their `?q=` filters server-side or via SPA router)
-    Probe(
-        "SkillsMP",
-        "https://skillsmp.com/?q=backblaze",
-        negative_terms=("No skills found",),
-    ),
-    Probe(
-        "SkillsLLM",
-        "https://skillsllm.com/?q=backblaze",
-        negative_terms=("No results", "Nothing found"),
-    ),
-    Probe(
-        "LobeHub Skills",
-        "https://lobehub.com/skills?q=backblaze",
-        negative_terms=("No skills found",),
-    ),
-    Probe(
-        "Pawgrammer Skills Market",
-        "https://skills.pawgrammer.com/?q=backblaze",
-        negative_terms=("No skills found", "couldn't find any skills"),
-    ),
-    # Interactive-search directories (homepage `?q=` is ignored; type into search box)
-    # Claude Marketplaces homepage has no free-text search input — only category
-    # browsing and email subscribe forms. Best signal we can get without a known
-    # canonical URL is checking if `b2-cloud-storage` appears anywhere on the
-    # rendered listings page.
-    Probe(
-        "Claude Marketplaces",
-        "https://claudemarketplaces.com/",
-        negative_terms=("No marketplaces found", "0 results"),
-    ),
-    # ClaudeSkills.info /skills exposes no input element. Their homepage may
-    # have a header search; try that instead.
-    Probe(
-        "ClaudeSkills.info",
-        "https://claudeskills.info/",
-        search_query="backblaze",
-        slow=True,
-        negative_terms=("No skills found",),
-    ),
-    Probe(
-        "Agent Skills Market",
-        "https://www.agentskillsmarket.space/",
-        search_query="backblaze",
-        negative_terms=("No skills found", "0 results"),
-    ),
-    Probe(
-        "SkillHub",
-        "https://skillhub.club/",
-        search_query="backblaze",
-        # Their search input is `type='text'` with placeholder "Search Skills..." —
-        # the generic locators miss the no-`type=search` case, so list it explicitly.
-        search_locators=(
-            "input[placeholder='Search Skills...' i]",
-            "input[placeholder*='Search Skills' i]",
-            *DEFAULT_SEARCH_LOCATORS,
-        ),
-        negative_terms=("No results", "No skills"),
-    ),
-    # Direct text probe — no UI involved
-    Probe(
-        "Awesome Claude Skills",
-        "https://raw.githubusercontent.com/travisvn/awesome-claude-skills/main/README.md",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-    ),
-    Probe(
-        "Awesome Claude Plugins",
-        "https://raw.githubusercontent.com/Chat2AnyLLM/awesome-claude-plugins/main/README.md",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-    ),
-    Probe(
-        "Awesome Agent Skills",
-        "https://raw.githubusercontent.com/heilcheng/awesome-agent-skills/main/README.md",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-    ),
-    # Anthropic's official directories
-    Probe(
-        "Anthropic claude-plugins-official",
-        "https://raw.githubusercontent.com/anthropics/claude-plugins-official/main/README.md",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage", "backblaze"),
-    ),
-    Probe(
-        "Anthropic skills",
-        "https://raw.githubusercontent.com/anthropics/skills/main/README.md",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage", "backblaze"),
-    ),
-    Probe(
-        "claude.com Skills",
-        "https://claude.com/skills?q=backblaze",
-        slow=True,
-        negative_terms=("No skills found", "0 results"),
-    ),
-    # WordPress-style search (?s=)
-    Probe(
-        "Cult of Claude",
-        "https://cultofclaude.com/skills/?s=backblaze",
-        negative_terms=("Nothing Found", "Sorry, but nothing matched"),
-    ),
-    # Community marketplaces — also crawl GitHub topics
-    Probe(
-        "alirezarezvani/claude-skills",
-        "https://raw.githubusercontent.com/alirezarezvani/claude-skills/main/README.md",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-    ),
-    Probe(
-        "daymade/claude-code-skills",
-        "https://raw.githubusercontent.com/daymade/claude-code-skills/main/README.md",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-    ),
-    Probe(
-        "mhattingpete/claude-skills-marketplace",
-        "https://raw.githubusercontent.com/mhattingpete/claude-skills-marketplace/main/README.md",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-    ),
-    # Tier-1 aggregators added 2026-05. Raw README grep — no JS needed but kept
-    # here for parity with the rest of the directory list and one-stop reporting.
-    Probe(
-        "VoltAgent/awesome-agent-skills",
-        "https://raw.githubusercontent.com/VoltAgent/awesome-agent-skills/main/README.md",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-    ),
-    Probe(
-        "hesreallyhim/awesome-claude-code",
-        "https://raw.githubusercontent.com/hesreallyhim/awesome-claude-code/main/README.md",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-    ),
-    Probe(
-        "ComposioHQ/awesome-claude-skills",
-        # Default branch is `master`, not `main`.
-        "https://raw.githubusercontent.com/ComposioHQ/awesome-claude-skills/master/README.md",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-    ),
-    Probe(
-        "netresearch/claude-code-marketplace",
-        # The manifest is the authoritative listing; README may lag.
-        "https://raw.githubusercontent.com/netresearch/claude-code-marketplace/main/.claude-plugin/marketplace.json",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage", "b2-cloud-storage"),
-    ),
-    # Tier-2 community lists
-    Probe(
-        "rohitg00/awesome-claude-code-toolkit",
-        "https://raw.githubusercontent.com/rohitg00/awesome-claude-code-toolkit/main/README.md",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-    ),
-    Probe(
-        "BehiSecc/awesome-claude-skills",
-        "https://raw.githubusercontent.com/BehiSecc/awesome-claude-skills/main/README.md",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-    ),
-    Probe(
-        "jqueryscript/awesome-claude-code",
-        "https://raw.githubusercontent.com/jqueryscript/awesome-claude-code/main/README.md",
-        match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-    ),
-    # SPA aggregators — must use Playwright (mcpmarket 403s plain curl, awesomeclaude
-    # is a Next.js site that hydrates client-side).
-    Probe(
-        "MCP Market — Skills",
-        "https://mcpmarket.com/tools/skills?q=backblaze",
-        slow=True,
-        negative_terms=("No skills found", "No results", "0 results"),
-    ),
-    Probe(
-        "awesomeclaude.ai",
-        "https://awesomeclaude.ai/awesome-claude-skills",
-        search_query="backblaze",
-        slow=True,
-        negative_terms=("No skills found", "No results"),
-    ),
-)
+PROBES = BROWSER_PROBES
 
 
 def _snippet_around(text: str, term: str, span: int = 80) -> str:
@@ -286,7 +75,7 @@ def _snippet_around(text: str, term: str, span: int = 80) -> str:
     return re.sub(r"\s+", " ", text[start:end]).strip()
 
 
-def _check_page_text(text: str, probe: Probe) -> tuple[Status, str | None, str | None]:
+def _check_page_text(text: str, probe: BrowserProbeSpec) -> tuple[Status, str | None, str | None]:
     """Return (status, matched_term, snippet) for the rendered text."""
     haystack = text.lower()
     for neg in probe.negative_terms:
@@ -328,7 +117,7 @@ def _dismiss_overlays(page: Page) -> None:
             continue
 
 
-def _interactive_search(page: Page, probe: Probe) -> str | None:
+def _interactive_search(page: Page, probe: BrowserProbeSpec) -> str | None:
     """Find a search input, type the query, press Enter. Returns the locator
     that worked (for debugging) or None if all candidates failed."""
     if not probe.search_query:
@@ -351,7 +140,36 @@ def _interactive_search(page: Page, probe: Probe) -> str | None:
     return None
 
 
-def run_probe(page: Page, probe: Probe, save_screenshots: bool) -> Result:
+def _safe_filename(name: str) -> str:
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "_", name).strip("._")
+    return safe or "probe"
+
+
+def screenshot_path_for_probe(name: str) -> Path:
+    return SCREENSHOT_DIR / f"{_safe_filename(name)}.png"
+
+
+def _normalized_filter(value: str) -> str:
+    return re.sub(r"\s+", " ", value.strip().lower())
+
+
+def filter_probes(
+    probes: tuple[BrowserProbeSpec, ...], only: list[str] | None
+) -> list[BrowserProbeSpec]:
+    if not only:
+        return list(probes)
+    wanted = {_normalized_filter(name) for name in only}
+    return [
+        probe
+        for probe in probes
+        if any(
+            want == _normalized_filter(probe.name) or want in _normalized_filter(probe.name)
+            for want in wanted
+        )
+    ]
+
+
+def run_probe(page: Page, probe: BrowserProbeSpec, save_screenshots: bool) -> Result:
     started = datetime.now(timezone.utc)
     result = Result(name=probe.name, url=probe.url, status="error")
     try:
@@ -397,7 +215,7 @@ def run_probe(page: Page, probe: Probe, save_screenshots: bool) -> Result:
     finally:
         if save_screenshots and probe.url.startswith("http") and result.status != "error":
             SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
-            path = SCREENSHOT_DIR / f"{probe.name.replace(' ', '_')}.png"
+            path = screenshot_path_for_probe(probe.name)
             try:
                 page.screenshot(path=str(path), full_page=True)
                 result.screenshot = str(path.relative_to(REPO_ROOT))
@@ -450,13 +268,18 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    probes: list[Probe] = list(PROBES)
-    if args.only:
-        wanted = {n.lower() for n in args.only}
-        probes = [p for p in probes if p.name.lower() in wanted]
-        if not probes:
-            print(f"No matching probes for --only {args.only}", file=sys.stderr)
-            return 2
+    probes = filter_probes(PROBES, args.only)
+    if not probes:
+        print(f"No matching probes for --only {args.only}", file=sys.stderr)
+        return 2
+
+    if sync_playwright is None:
+        print(
+            "playwright is not installed. Run:\n"
+            "    pip install playwright && playwright install chromium",
+            file=sys.stderr,
+        )
+        return 2
 
     results: list[Result] = []
     with sync_playwright() as pw:

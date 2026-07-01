@@ -26,8 +26,7 @@ Usage::
 Exit codes:
   0 — every probe completed (live or not_found, no errors)
   1 — at least one probe errored (network, HTTP 5xx, etc.)
-  2 — ``--strict`` is set and a hard expectation failed (e.g. repo missing
-      required topics)
+  2 — required GitHub topics are missing, or ``--strict`` cannot verify them
 """
 
 from __future__ import annotations
@@ -36,6 +35,7 @@ import argparse
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 from dataclasses import asdict, dataclass, field
@@ -43,24 +43,29 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
-REPO_SLUG = "backblaze-labs/claude-skill-b2-cloud-storage"
-SKILL_NAME = "b2-cloud-storage"
+from listing_catalog import HTTP_PROBES, REPO_SLUG, SKILL_NAME, HttpProbeSpec
 
 # Topics that drive marketplace auto-discovery. Missing any of these is a
 # concrete, fixable cause of "we're not listed anywhere."
 EXPECTED_TOPICS = ("skillsmp", "claude-skill", "agent-skill", "claude-code")
-
-MATCH_TERMS = (
-    REPO_SLUG.lower(),
-    "claude-skill-b2-cloud-storage",
-)
 
 USER_AGENT = (
     "claude-skill-b2-cloud-storage-listing-check/1.0 "
     "(+https://github.com/backblaze-labs/claude-skill-b2-cloud-storage)"
 )
 
+READ_CHUNK_BYTES = 64 * 1024
+MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+HTTP_TIMEOUT_SECONDS = 15.0
+HTTP_TOTAL_TIMEOUT_SECONDS = 20.0
+GITHUB_RETRY_ATTEMPTS = 3
+GITHUB_RETRY_BACKOFF_SECONDS = (1.0, 2.0)
+
 Status = Literal["live", "not_found", "error", "missing_topic"]
+
+
+class ResponseTooLarge(ValueError):
+    """Raised when an HTTP response exceeds the configured body cap."""
 
 
 @dataclass
@@ -74,16 +79,56 @@ class Result:
     extras: dict[str, object] = field(default_factory=dict)
 
 
+def _read_limited_body(response: object, *, max_bytes: int, deadline: float) -> bytes:
+    headers = getattr(response, "headers", {})
+    content_length = headers.get("Content-Length") if headers else None
+    if content_length:
+        try:
+            if int(content_length) > max_bytes:
+                msg = f"Content-Length {content_length} exceeds {max_bytes} byte limit"
+                raise ResponseTooLarge(msg)
+        except ValueError as exc:
+            if isinstance(exc, ResponseTooLarge):
+                raise
+
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        if time.monotonic() > deadline:
+            raise TimeoutError("response read deadline exceeded")
+        read_size = min(READ_CHUNK_BYTES, max_bytes + 1 - total)
+        chunk = response.read(read_size)
+        if not chunk:
+            return b"".join(chunks)
+        chunks.append(chunk)
+        total += len(chunk)
+        if total > max_bytes:
+            msg = f"response exceeded {max_bytes} byte limit"
+            raise ResponseTooLarge(msg)
+
+
 def _http_get(
-    url: str, *, headers: dict[str, str] | None = None, timeout: int = 15
+    url: str,
+    *,
+    headers: dict[str, str] | None = None,
+    timeout: float = HTTP_TIMEOUT_SECONDS,
+    max_bytes: int = MAX_RESPONSE_BYTES,
+    total_timeout: float = HTTP_TOTAL_TIMEOUT_SECONDS,
 ) -> tuple[int, str, dict[str, str]]:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
+    deadline = time.monotonic() + total_timeout
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            body = resp.read().decode("utf-8", errors="replace")
+            body = _read_limited_body(resp, max_bytes=max_bytes, deadline=deadline).decode(
+                "utf-8", errors="replace"
+            )
             return resp.status, body, dict(resp.headers)
     except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", errors="replace") if e.fp else ""
+        body = ""
+        if e.fp:
+            body = _read_limited_body(e, max_bytes=max_bytes, deadline=deadline).decode(
+                "utf-8", errors="replace"
+            )
         return e.code, body, dict(e.headers or {})
 
 
@@ -95,7 +140,29 @@ def _scan(text: str, terms: tuple[str, ...]) -> str | None:
     return None
 
 
-def check_github_repo() -> Result:
+def _elapsed_ms(started: datetime) -> int:
+    return int((datetime.now(timezone.utc) - started).total_seconds() * 1000)
+
+
+def _is_retryable_status(code: int) -> bool:
+    return code in (403, 429) or code >= 500
+
+
+def _github_error_result(started: datetime, detail: str) -> Result:
+    return Result(
+        "GitHub repo metadata",
+        f"https://api.github.com/repos/{REPO_SLUG}",
+        "error",
+        detail=f"GitHub metadata unavailable: {detail}",
+        duration_ms=_elapsed_ms(started),
+    )
+
+
+def check_github_repo(
+    *,
+    attempts: int = GITHUB_RETRY_ATTEMPTS,
+    backoff_seconds: tuple[float, ...] = GITHUB_RETRY_BACKOFF_SECONDS,
+) -> Result:
     """Hit api.github.com for repo metadata. Flags missing topics."""
     started = datetime.now(timezone.utc)
     name = "GitHub repo metadata"
@@ -104,159 +171,84 @@ def check_github_repo() -> Result:
     token = os.environ.get("GITHUB_TOKEN")
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    try:
-        code, body, _ = _http_get(url, headers=headers)
-        elapsed = int((datetime.now(timezone.utc) - started).total_seconds() * 1000)
-        if code != 200:
-            return Result(name, url, "error", detail=f"HTTP {code}", duration_ms=elapsed)
-        data = json.loads(body)
-        topics = tuple(data.get("topics") or ())
-        missing = tuple(t for t in EXPECTED_TOPICS if t not in topics)
-        extras: dict[str, object] = {
-            "stars": data.get("stargazers_count"),
-            "forks": data.get("forks_count"),
-            "archived": data.get("archived"),
-            "default_branch": data.get("default_branch"),
-            "topics": topics,
-            "missing_topics": missing,
-            "description": data.get("description"),
-        }
-        if missing:
+
+    last_detail = "unknown error"
+    for attempt in range(1, attempts + 1):
+        try:
+            code, body, _ = _http_get(url, headers=headers)
+            if code != 200:
+                last_detail = f"HTTP {code}"
+                if attempt < attempts and _is_retryable_status(code):
+                    time.sleep(backoff_seconds[min(attempt - 1, len(backoff_seconds) - 1)])
+                    continue
+                return _github_error_result(started, last_detail)
+
+            data = json.loads(body)
+            topics = tuple(data.get("topics") or ())
+            missing = tuple(t for t in EXPECTED_TOPICS if t not in topics)
+            extras: dict[str, object] = {
+                "stars": data.get("stargazers_count"),
+                "forks": data.get("forks_count"),
+                "archived": data.get("archived"),
+                "default_branch": data.get("default_branch"),
+                "topics": topics,
+                "missing_topics": missing,
+                "description": data.get("description"),
+                "attempts": attempt,
+            }
+            if missing:
+                return Result(
+                    name,
+                    url,
+                    "missing_topic",
+                    detail=f"missing topics: {', '.join(missing)}",
+                    duration_ms=_elapsed_ms(started),
+                    extras=extras,
+                )
             return Result(
                 name,
                 url,
-                "missing_topic",
-                detail=f"missing topics: {', '.join(missing)}",
-                duration_ms=elapsed,
+                "live",
+                detail=f"{data.get('stargazers_count', 0)}★ • topics ok",
+                duration_ms=_elapsed_ms(started),
                 extras=extras,
             )
-        return Result(
-            name,
-            url,
-            "live",
-            detail=f"{data.get('stargazers_count', 0)}★ • topics ok",
-            duration_ms=elapsed,
-            extras=extras,
-        )
-    except (urllib.error.URLError, TimeoutError, ValueError) as exc:
-        elapsed = int((datetime.now(timezone.utc) - started).total_seconds() * 1000)
-        return Result(
-            name, url, "error", detail=f"{type(exc).__name__}: {exc}", duration_ms=elapsed
-        )
+        except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+            last_detail = f"{type(exc).__name__}: {exc}"
+            if attempt < attempts:
+                time.sleep(backoff_seconds[min(attempt - 1, len(backoff_seconds) - 1)])
+                continue
+            return _github_error_result(started, last_detail)
+
+    return _github_error_result(started, last_detail)
 
 
-def check_text_probe(name: str, url: str, terms: tuple[str, ...] = MATCH_TERMS) -> Result:
+def check_text_probe(probe: HttpProbeSpec) -> Result:
     """Fetch a URL, grep for any of `terms`."""
     started = datetime.now(timezone.utc)
     try:
-        code, body, _ = _http_get(url)
-        elapsed = int((datetime.now(timezone.utc) - started).total_seconds() * 1000)
+        code, body, _ = _http_get(probe.url)
+        elapsed = _elapsed_ms(started)
         if code >= 400:
-            return Result(name, url, "error", detail=f"HTTP {code}", duration_ms=elapsed)
-        matched = _scan(body, terms)
+            return Result(
+                probe.name, probe.url, "error", detail=f"HTTP {code}", duration_ms=elapsed
+            )
+        matched = _scan(body, probe.match_terms)
         if matched:
-            return Result(name, url, "live", matched_term=matched, duration_ms=elapsed)
-        return Result(name, url, "not_found", duration_ms=elapsed)
-    except (urllib.error.URLError, TimeoutError) as exc:
-        elapsed = int((datetime.now(timezone.utc) - started).total_seconds() * 1000)
+            return Result(probe.name, probe.url, "live", matched_term=matched, duration_ms=elapsed)
+        return Result(probe.name, probe.url, "not_found", duration_ms=elapsed)
+    except (urllib.error.URLError, TimeoutError, ResponseTooLarge) as exc:
+        elapsed = _elapsed_ms(started)
         return Result(
-            name, url, "error", detail=f"{type(exc).__name__}: {exc}", duration_ms=elapsed
+            probe.name,
+            probe.url,
+            "error",
+            detail=f"{type(exc).__name__}: {exc}",
+            duration_ms=elapsed,
         )
 
 
-# Probes that are fully checkable via plain HTTP (text grep). For SPAs,
-# defer to scripts/check_listings.py.
-TEXT_PROBES: tuple[tuple[str, str], ...] = (
-    # Awesome lists
-    (
-        "Awesome Claude Skills (travisvn)",
-        "https://raw.githubusercontent.com/travisvn/awesome-claude-skills/main/README.md",
-    ),
-    (
-        "Awesome Claude Plugins (Chat2AnyLLM)",
-        "https://raw.githubusercontent.com/Chat2AnyLLM/awesome-claude-plugins/main/README.md",
-    ),
-    (
-        "Awesome Agent Skills (heilcheng)",
-        "https://raw.githubusercontent.com/heilcheng/awesome-agent-skills/main/README.md",
-    ),
-    # Anthropic-managed directories
-    (
-        "Anthropic claude-plugins-official",
-        "https://raw.githubusercontent.com/anthropics/claude-plugins-official/main/README.md",
-    ),
-    (
-        "Anthropic skills",
-        "https://raw.githubusercontent.com/anthropics/skills/main/README.md",
-    ),
-    # Community marketplaces with public READMEs
-    (
-        "alirezarezvani/claude-skills",
-        "https://raw.githubusercontent.com/alirezarezvani/claude-skills/main/README.md",
-    ),
-    (
-        "daymade/claude-code-skills",
-        "https://raw.githubusercontent.com/daymade/claude-code-skills/main/README.md",
-    ),
-    (
-        "mhattingpete/claude-skills-marketplace",
-        "https://raw.githubusercontent.com/mhattingpete/claude-skills-marketplace/main/README.md",
-    ),
-    # Tier-1 aggregators added 2026-05 — verified default branches per repo.
-    # ComposioHQ uses `master`; everyone else here uses `main`.
-    (
-        "VoltAgent/awesome-agent-skills",
-        "https://raw.githubusercontent.com/VoltAgent/awesome-agent-skills/main/README.md",
-    ),
-    (
-        "hesreallyhim/awesome-claude-code",
-        "https://raw.githubusercontent.com/hesreallyhim/awesome-claude-code/main/README.md",
-    ),
-    (
-        "ComposioHQ/awesome-claude-skills",
-        "https://raw.githubusercontent.com/ComposioHQ/awesome-claude-skills/master/README.md",
-    ),
-    (
-        "netresearch/claude-code-marketplace (README)",
-        "https://raw.githubusercontent.com/netresearch/claude-code-marketplace/main/README.md",
-    ),
-    # The marketplace.json is the authoritative source — README may lag.
-    (
-        "netresearch/claude-code-marketplace (manifest)",
-        "https://raw.githubusercontent.com/netresearch/claude-code-marketplace/main/.claude-plugin/marketplace.json",
-    ),
-    # Tier-2 community lists
-    (
-        "rohitg00/awesome-claude-code-toolkit",
-        "https://raw.githubusercontent.com/rohitg00/awesome-claude-code-toolkit/main/README.md",
-    ),
-    (
-        "BehiSecc/awesome-claude-skills",
-        "https://raw.githubusercontent.com/BehiSecc/awesome-claude-skills/main/README.md",
-    ),
-    (
-        "jqueryscript/awesome-claude-code",
-        "https://raw.githubusercontent.com/jqueryscript/awesome-claude-code/main/README.md",
-    ),
-    # SPAs — best-effort HTML grep. May produce false negatives if listings
-    # are rendered client-side; trust the Playwright probe for those.
-    (
-        "SkillsMP (HTML)",
-        "https://skillsmp.com/?q=backblaze",
-    ),
-    (
-        "LobeHub Skills (HTML)",
-        "https://lobehub.com/skills?q=backblaze",
-    ),
-    (
-        "Claude Marketplaces (HTML)",
-        "https://claudemarketplaces.com/",
-    ),
-    (
-        "Cult of Claude (HTML)",
-        "https://cultofclaude.com/skills/?s=backblaze",
-    ),
-)
+TEXT_PROBES = HTTP_PROBES
 
 
 def render_markdown(results: list[Result]) -> str:
@@ -293,6 +285,17 @@ def render_markdown(results: list[Result]) -> str:
     return "\n".join(lines)
 
 
+def strict_topic_failures(results: list[Result]) -> list[str]:
+    github = next((r for r in results if r.name == "GitHub repo metadata"), None)
+    if github is None:
+        return ["GitHub metadata result missing from probe output"]
+    if github.status == "missing_topic":
+        return [github.detail or "required GitHub discovery topics are missing"]
+    if github.status == "error":
+        return [github.detail or "GitHub metadata probe failed"]
+    return []
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -302,14 +305,17 @@ def main() -> int:
     parser.add_argument(
         "--strict",
         action="store_true",
-        help="Exit nonzero on missing GitHub topics (in addition to errors)",
+        help=(
+            "Exit nonzero when the GitHub metadata probe is unavailable or required "
+            "topics are missing; third-party marketplace errors remain report-only"
+        ),
     )
     args = parser.parse_args()
 
     results: list[Result] = [check_github_repo()]
-    for name, url in TEXT_PROBES:
-        print(f"  → {name}  …  ", end="", flush=True, file=sys.stderr)
-        r = check_text_probe(name, url)
+    for probe in TEXT_PROBES:
+        print(f"  → {probe.name}  …  ", end="", flush=True, file=sys.stderr)
+        r = check_text_probe(probe)
         results.append(r)
         tag = r.matched_term or r.detail or "—"
         print(f"{r.status}  ({r.duration_ms}ms)  {tag}", file=sys.stderr)
@@ -323,11 +329,17 @@ def main() -> int:
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(md + "\n", encoding="utf-8")
 
+    if args.strict:
+        failures = strict_topic_failures(results)
+        for failure in failures:
+            print(f"::error::{failure}", file=sys.stderr)
+        return 2 if failures else 0
+
     has_error = any(r.status == "error" for r in results)
     has_missing_topic = any(r.status == "missing_topic" for r in results)
     if has_error:
         return 1
-    if args.strict and has_missing_topic:
+    if has_missing_topic:
         return 2
     return 0
 
