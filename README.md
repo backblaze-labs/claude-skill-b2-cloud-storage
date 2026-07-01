@@ -237,7 +237,7 @@ claude-skill-b2-cloud-storage/
 
 - [Claude Code](https://claude.ai/code) (or any Agent Skills-compatible tool)
 - Python 3.10+ (CI tests against 3.10 – 3.14)
-- B2 CLI v4+ (auto-installed by the skill)
+- User-installed B2 CLI v4+
 - A [Backblaze B2](https://www.backblaze.com/cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=claudeskill) account
 
 ## License
