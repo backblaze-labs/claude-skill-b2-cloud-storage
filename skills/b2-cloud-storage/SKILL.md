@@ -1,6 +1,6 @@
 ---
 name: b2-cloud-storage
-description: Manage Backblaze B2 cloud storage — list files, audit usage, estimate cost, clean up stale data, review security posture, and manage lifecycle rules. Use when the user mentions B2, Backblaze, object storage buckets, or storage cleanup.
+description: Manage Backblaze B2 cloud storage. List files, audit usage, estimate cost, clean up stale data, review security posture, and manage lifecycle rules. Use when the user mentions B2, Backblaze, object storage buckets, or storage cleanup.
 license: MIT
 compatibility: Requires b2 CLI v4+ (pip install b2) and Python 3.10+.
 metadata:

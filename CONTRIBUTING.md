@@ -85,7 +85,7 @@ Three workflows fire on every push to a PR branch:
 | Workflow | What it runs | Failure means |
 |---|---|---|
 | `ci.yml` | `pytest tests/ -v` × Python 3.10–3.14 | A test broke on at least one version. |
-| `ci.yml` | `validate_frontmatter.py b2-cloud-storage/SKILL.md` | SKILL.md frontmatter is malformed or missing required fields. |
+| `ci.yml` | `validate_frontmatter.py skills/b2-cloud-storage/SKILL.md` | SKILL.md frontmatter is malformed or missing required fields. |
 | `lint.yml` | Full pre-commit suite | A hook (ruff, markdownlint, cspell, mypy, yamllint, etc.) is unhappy. |
 
 There's no merge-with-failing-CI escape hatch. If CI is red, the PR doesn't land.
@@ -136,7 +136,7 @@ Contributors don't run `release.py` — only the release manager does. As a cont
 
 - **Human review is required.** This repo will eventually be listed on [travisvn/awesome-claude-skills](https://github.com/travisvn/awesome-claude-skills), which auto-rejects AI-generated PRs. Don't let an AI write your PR description, commit messages, or code-review responses verbatim — at minimum, read and edit before posting.
 - **One feature per PR.** Multi-feature PRs are hard to review and harder to revert. If your change touches three things, split it.
-- **Update SKILL.md and references.** Functional changes that affect how the skill is invoked or what the user sees must update `b2-cloud-storage/SKILL.md` and any relevant `references/*.md`.
+- **Update SKILL.md and references.** Functional changes that affect how the skill is invoked or what the user sees must update `skills/b2-cloud-storage/SKILL.md` and any relevant `references/*.md`.
 - **Update tests.** New behavior gets a test. Bug fixes get a regression test.
 - **Add to CHANGELOG.md.** Every PR that changes user-visible behavior adds a line under `## [Unreleased]`. Internal-only changes (CI, lint config, dependency bumps) can be omitted from the changelog if they don't affect skill consumers.
 
@@ -154,7 +154,7 @@ pytest tests/test_storage_audit.py::test_audit_cost_estimation -v   # run one te
 pytest tests/ -v --pdb                               # drop to debugger on failure
 
 # Type checking
-mypy b2-cloud-storage/scripts tests                  # full project mypy run
+mypy skills/b2-cloud-storage/scripts tests           # full project mypy run
 
 # Versioning / release tools (release manager only)
 scripts/release.py --dry-run patch                   # preview a patch bump
@@ -162,7 +162,7 @@ scripts/check_version.py v1.1.0                      # verify all version fields
 scripts/build_artifacts.py v1.1.0                    # build dist/*.tar.gz + dist/*.zip locally
 
 # Skill install (test the skill end-to-end)
-cp -r b2-cloud-storage ~/.claude/skills/b2-cloud-storage
+cp -r skills/b2-cloud-storage ~/.claude/skills/b2-cloud-storage
 # then in Claude Code: "audit my-bucket for stale files"
 ```
 

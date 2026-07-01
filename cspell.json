@@ -5,8 +5,8 @@
   "globRoot": ".",
   "files": [
     "README.md",
-    "b2-cloud-storage/**/*.md",
-    "b2-cloud-storage/**/*.py",
+    "skills/b2-cloud-storage/**/*.md",
+    "skills/b2-cloud-storage/**/*.py",
     "tests/**/*.py",
     "*.md"
   ],

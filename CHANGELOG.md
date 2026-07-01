@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Moved the skill from `b2-cloud-storage/` to `skills/b2-cloud-storage/` so marketplace
+  crawlers that scan the conventional `skills/<name>/SKILL.md` path can discover it. Release
+  artifacts still root at `b2-cloud-storage/`, so install commands and URLs are unchanged.
+
 ## [1.2.0] - 2026-04-28
 
 ### Added

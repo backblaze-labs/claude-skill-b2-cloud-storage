@@ -16,7 +16,7 @@ Optional flags:
     --allow-any-branch  Skip the main/master branch check.
 
 Updates version in:
-  - b2-cloud-storage/SKILL.md  (frontmatter `metadata.version`)
+  - skills/b2-cloud-storage/SKILL.md  (frontmatter `metadata.version`)
   - .claude-plugin/marketplace.json  (`metadata.version` and every `plugins[].version`)
 
 Rotates CHANGELOG.md:
@@ -40,7 +40,7 @@ from datetime import date
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-SKILL_MD = REPO / "b2-cloud-storage" / "SKILL.md"
+SKILL_MD = REPO / "skills" / "b2-cloud-storage" / "SKILL.md"
 MARKETPLACE = REPO / ".claude-plugin" / "marketplace.json"
 CHANGELOG = REPO / "CHANGELOG.md"
 

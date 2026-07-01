@@ -25,10 +25,10 @@ jobs:
         run: pip install ruff pytest pyyaml
 
       - name: Lint
-        run: ruff check b2-cloud-storage/scripts tests
+        run: ruff check skills/b2-cloud-storage/scripts tests
 
       - name: Test
         run: pytest tests/ -v
 
       - name: Validate SKILL.md frontmatter
-        run: python tests/validate_frontmatter.py b2-cloud-storage/SKILL.md
+        run: python tests/validate_frontmatter.py skills/b2-cloud-storage/SKILL.md

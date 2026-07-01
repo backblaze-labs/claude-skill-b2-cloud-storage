@@ -21,7 +21,7 @@ That's the whole repo-side flow. The push triggers `.github/workflows/release.ym
 2. Reads current version from `.claude-plugin/marketplace.json` (canonical).
 3. Bumps it according to `major | minor | patch | X.Y.Z`.
 4. Updates the version in:
-   - `b2-cloud-storage/SKILL.md` — frontmatter `metadata.version`
+   - `skills/b2-cloud-storage/SKILL.md`: frontmatter `metadata.version`
    - `.claude-plugin/marketplace.json` — `metadata.version` AND every `plugins[].version`
 5. `git add` those two files.
 6. `git commit -m "chore: release vX.Y.Z"`.
@@ -80,7 +80,7 @@ The GitHub Release body is built by `release.yml` from auto-generated PR titles;
 
 
    ```bash
-   cd b2-cloud-storage
+   cd skills/b2-cloud-storage
    npx @skill-hub/cli publish
    ```
 

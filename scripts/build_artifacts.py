@@ -24,7 +24,7 @@ import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-SKILL_DIR = REPO / "b2-cloud-storage"
+SKILL_DIR = REPO / "skills" / "b2-cloud-storage"
 DIST = REPO / "dist"
 
 # Patterns to keep out of release artifacts. These are dev-time noise that

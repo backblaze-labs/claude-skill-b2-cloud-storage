@@ -102,14 +102,14 @@ When you want to edit the skill in place or test changes locally:
 
 ```bash
 git clone https://github.com/backblaze-labs/claude-skill-b2-cloud-storage.git /tmp/b2-skill \
-  && cp -r /tmp/b2-skill/b2-cloud-storage ~/.claude/skills/b2-cloud-storage \
+  && cp -r /tmp/b2-skill/skills/b2-cloud-storage ~/.claude/skills/b2-cloud-storage \
   && rm -rf /tmp/b2-skill
 ```
 
 Or, if you've already cloned the repo, from the repo root:
 
 ```bash
-cp -r b2-cloud-storage ~/.claude/skills/b2-cloud-storage
+cp -r skills/b2-cloud-storage ~/.claude/skills/b2-cloud-storage
 ```
 
 ### 5. Marketplace-specific CLIs
@@ -200,7 +200,7 @@ B2_ACCOUNT_INFO=~/.b2_account_info_myproject b2 account authorize
 
 Then set `accountInfoPath` to `~/.b2_account_info_myproject` in your project's config.
 
-An example config file is included at [`b2-cloud-storage/b2-config.example.json`](b2-cloud-storage/b2-config.example.json).
+An example config file is included at [`skills/b2-cloud-storage/b2-config.example.json`](skills/b2-cloud-storage/b2-config.example.json).
 
 **Note**: This config file stores bucket names and file paths only — never API keys or secrets. Add `.claude/b2-config.json` to your `.gitignore`.
 
@@ -220,16 +220,17 @@ claude-skill-b2-cloud-storage/
 ├── README.md
 ├── .github/workflows/ci.yml             # Lint + tests + frontmatter validation
 ├── tests/                               # Unit tests for the audit script
-└── b2-cloud-storage/                    # Copy this folder to ~/.claude/skills/
-    ├── SKILL.md                         # Skill definition and instructions
-    ├── b2-config.example.json           # Example per-project config
-    ├── scripts/
-    │   └── storage_audit.py             # Audit: usage, versions, unfinished, cost
-    └── references/
-        ├── setup.md                     # First-use setup walk-through
-        ├── cleanup-playbook.md          # Safe deletion procedure
-        ├── security-review.md           # Per-bucket security checklist
-        └── b2-cli-reference.md          # B2 CLI v4 command reference
+└── skills/
+    └── b2-cloud-storage/                # Copy this folder to ~/.claude/skills/
+        ├── SKILL.md                     # Skill definition and instructions
+        ├── b2-config.example.json       # Example per-project config
+        ├── scripts/
+        │   └── storage_audit.py         # Audit: usage, versions, unfinished, cost
+        └── references/
+            ├── setup.md                 # First-use setup walk-through
+            ├── cleanup-playbook.md      # Safe deletion procedure
+            ├── security-review.md       # Per-bucket security checklist
+            └── b2-cli-reference.md      # B2 CLI v4 command reference
 ```
 
 ## Requirements

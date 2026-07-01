@@ -12,9 +12,9 @@
   "plugins": [
     {
       "name": "b2-cloud-storage",
-      "source": "./b2-cloud-storage",
+      "source": "./skills/b2-cloud-storage",
       "version": "1.2.0",
-      "description": "Manage Backblaze B2 cloud storage from the terminal \u2014 list, audit, cleanup, security review, lifecycle.",
+      "description": "Manage Backblaze B2 cloud storage from the terminal: list, audit, cleanup, security review, lifecycle.",
       "category": "storage",
       "tags": [
         "backblaze",
