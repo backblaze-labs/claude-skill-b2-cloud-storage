@@ -79,6 +79,17 @@ class Result:
     extras: dict[str, object] = field(default_factory=dict)
 
 
+def _set_response_read_timeout(response: object, timeout: float) -> None:
+    current = response
+    for attr in ("fp", "raw", "_sock"):
+        current = getattr(current, attr, None)
+        if current is None:
+            return
+    settimeout = getattr(current, "settimeout", None)
+    if callable(settimeout):
+        settimeout(max(timeout, 0.001))
+
+
 def _read_limited_body(response: object, *, max_bytes: int, deadline: float) -> bytes:
     headers = getattr(response, "headers", {})
     content_length = headers.get("Content-Length") if headers else None
@@ -94,8 +105,10 @@ def _read_limited_body(response: object, *, max_bytes: int, deadline: float) -> 
     chunks: list[bytes] = []
     total = 0
     while True:
-        if time.monotonic() > deadline:
+        remaining_seconds = deadline - time.monotonic()
+        if remaining_seconds <= 0:
             raise TimeoutError("response read deadline exceeded")
+        _set_response_read_timeout(response, remaining_seconds)
         read_size = min(READ_CHUNK_BYTES, max_bytes + 1 - total)
         chunk = response.read(read_size)
         if not chunk:

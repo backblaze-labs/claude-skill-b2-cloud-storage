@@ -14,6 +14,7 @@ def _workflow_docs() -> list[tuple[Path, dict[str, Any]]]:
     docs: list[tuple[Path, dict[str, Any]]] = []
     for path in sorted(WORKFLOW_DIR.glob("*.yml")):
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        assert isinstance(data, dict), f"{path.name} must contain a mapping document"
         docs.append((path, data))
     return docs
 
