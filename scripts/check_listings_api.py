@@ -21,7 +21,7 @@ Usage::
     python scripts/check_listings_api.py
     python scripts/check_listings_api.py --json
     python scripts/check_listings_api.py --report dist/listings-api.md
-    GITHUB_TOKEN=ghp_... python scripts/check_listings_api.py     # higher rate limits
+    GITHUB_TOKEN=your-token python scripts/check_listings_api.py  # higher rate limits
 
 Exit codes:
   0 — every probe completed (live or not_found, no errors)
