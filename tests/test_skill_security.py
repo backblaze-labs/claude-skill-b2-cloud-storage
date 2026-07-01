@@ -12,9 +12,17 @@ DOCS_WITH_INSTALL_GUIDANCE = [
     *sorted((SKILL_DIR / "references").glob("*.md")),
 ]
 
+PIP_VALUE_OPTION = (
+    r"(?:--(?:index-url|extra-index-url|find-links|trusted-host|proxy|cert|client-cert|"
+    r"cache-dir|src|constraint|requirement|config-settings|global-option|install-option)"
+    r"|-[ic])(?:=|\s+)\S+"
+)
+PIP_FLAG_OPTION = r"(?:--[A-Za-z0-9][\w-]*|-[A-Za-z])"
+PIP_OPTIONS = rf"(?:(?:{PIP_VALUE_OPTION}|{PIP_FLAG_OPTION})\s+)*"
 UNPINNED_B2_INSTALL = re.compile(
     r"\b(?:python3?\s+-m\s+)?pip3?\s+install\s+"
-    r"(?:--\S+\s+)*b2(?:\[[^\]\s]+\])?(?=$|[\s`'\"),.;:\]}!?])",
+    + PIP_OPTIONS
+    + r"b2(?:\[[^\]\s]+\])?(?=$|[\s`'\"),.;:\]}!?])",
     re.IGNORECASE,
 )
 
@@ -50,7 +58,16 @@ def test_unpinned_b2_install_pattern_allows_pinned_package_specs() -> None:
     assert UNPINNED_B2_INSTALL.search("Install with pip install b2, then verify")
     assert UNPINNED_B2_INSTALL.search("pip install b2.")
     assert UNPINNED_B2_INSTALL.search("pip install b2[crt]")
+    assert UNPINNED_B2_INSTALL.search("pip install --index-url https://example.test/simple b2")
+    assert UNPINNED_B2_INSTALL.search("pip install --index-url=https://example.test/simple b2")
+    assert UNPINNED_B2_INSTALL.search("pip install -i https://example.test/simple b2")
+    assert UNPINNED_B2_INSTALL.search(
+        "pip install --extra-index-url https://example.test/simple --trusted-host example.test b2"
+    )
     assert not UNPINNED_B2_INSTALL.search("pip install b2==4.0.0 --hash=sha256:abc")
     assert not UNPINNED_B2_INSTALL.search("pip install b2[crt]==4.0.0 --hash=sha256:abc")
+    assert not UNPINNED_B2_INSTALL.search(
+        "pip install --index-url https://example.test/simple b2==4.0.0"
+    )
     assert not UNPINNED_B2_INSTALL.search("pip install b2~=4.0")
     assert not UNPINNED_B2_INSTALL.search("pip install b2>=4")
