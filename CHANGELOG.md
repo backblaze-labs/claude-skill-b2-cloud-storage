@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved the skill from `b2-cloud-storage/` to `skills/b2-cloud-storage/` so marketplace
   crawlers that scan the conventional `skills/<name>/SKILL.md` path can discover it. Release
   artifacts still root at `b2-cloud-storage/`, so install commands and URLs are unchanged.
+- Fixed ZIP release artifact paths so they keep the public `b2-cloud-storage/` archive root.
+- Removed agent-managed B2 CLI package installation guidance; users install the CLI themselves.
 
 ## [1.2.0] - 2026-04-28
 

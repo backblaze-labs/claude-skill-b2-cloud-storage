@@ -8,13 +8,7 @@ Use this when `b2 version` is missing or `b2 ls` returns an auth error.
 b2 version
 ```
 
-If the command is not found:
-
-```bash
-pip install b2
-```
-
-If `pip` is unavailable, try `pip3 install b2`. Verify afterwards with `b2 version`. The skill requires v4 or newer — older v3 syntax (no `b2://` URIs) is not supported.
+If the command is not found, stop and ask the user to install the official B2 CLI v4+ themselves using a trusted package manager or an approved pinned, hash-verified package workflow. Do not install packages from the agent session. After the user installs the CLI, verify with `b2 version`. The skill requires v4 or newer — older v3 syntax (no `b2://` URIs) is not supported.
 
 ## Step 2 — Check existing authorization
 

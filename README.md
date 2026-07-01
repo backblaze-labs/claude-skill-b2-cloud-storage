@@ -47,7 +47,7 @@ Built on the open [Agent Skills](https://agentskills.io) specification. Compatib
 - **Cleanup with safety** — mandatory dry-run + explicit "yes" confirmation before any deletion
 - **Security review** — per-bucket checklist (type, SSE, CORS, object lock, replication, lifecycle coverage)
 - **Lifecycle rules** — view and update expiration policies
-- **Guided setup** — walks through CLI install, app-key creation, and authorization
+- **Guided setup** — checks for a user-installed CLI, then walks through app-key creation and authorization
 - **Per-project config** — different buckets and credentials per project
 
 ## Install
@@ -160,9 +160,9 @@ python ~/.claude/skills/b2-cloud-storage/scripts/storage_audit.py <bucket> \
 
 ## Setup & API Keys
 
-The skill handles setup automatically on first use:
+The skill verifies prerequisites and guides authorization on first use:
 
-1. **Installs B2 CLI** if not found (`pip install b2`)
+1. **Checks for B2 CLI v4+** and asks you to install it if missing
 2. **Checks authorization** — skips ahead if already configured
 3. **Guides API key creation**:
    - Log in at [secure.backblaze.com](https://secure.backblaze.com/app_keys.htm)

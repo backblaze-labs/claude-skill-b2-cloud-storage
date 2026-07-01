@@ -2,11 +2,11 @@
 name: b2-cloud-storage
 description: Manage Backblaze B2 cloud storage. List files, audit usage, estimate cost, clean up stale data, review security posture, and manage lifecycle rules. Use when the user mentions B2, Backblaze, object storage buckets, or storage cleanup.
 license: MIT
-compatibility: Requires b2 CLI v4+ (pip install b2) and Python 3.10+.
+compatibility: Requires user-installed b2 CLI v4+ and Python 3.10+.
 metadata:
   author: jdeleon
   version: "1.2.0"
-allowed-tools: Bash(b2:*) Bash(python:*) Bash(pip:*) Bash(pip3:*) Read Write Grep Glob
+allowed-tools: Bash(b2:*) Bash(python:*) Read Write Grep Glob
 ---
 
 # B2 Cloud Storage Management
@@ -25,7 +25,7 @@ Manage Backblaze B2 cloud storage: list files, audit usage, estimate cost, clean
 
 ## First-Use Flow
 
-1. Check the B2 CLI is installed: `b2 version`. If missing, install (`pip install b2`) — see `references/setup.md` for detail.
+1. Check the B2 CLI is installed: `b2 version`. If missing, ask the user to install the CLI outside the agent, then rerun `b2 version` - see `references/setup.md` for detail.
 2. Verify the CLI is authorized: `b2 ls`. If it fails with an auth error, walk the user through `references/setup.md`.
 3. Check for a per-project config at `.claude/b2-config.json` in the project root. If missing, ask the user for bucket + prefix and create one.
 
