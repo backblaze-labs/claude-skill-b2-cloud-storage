@@ -1,0 +1,60 @@
+name: Listings
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Mondays 09:00 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/check_listings_api.py"
+      - ".github/workflows/listings.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    name: marketplace listing check (HTTP)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Probe marketplaces (HTTP-only, no browser)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          # `|| true`: third-party sites time out intermittently; the report
+          # is the signal, not the exit code. Strict topic checks live below.
+          python scripts/check_listings_api.py \
+            --report dist/listings-api.md --json > dist/listings-api.json || true
+          {
+            echo "## Marketplace listing status (HTTP probe)"
+            echo
+            cat dist/listings-api.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if the repo is missing discovery topics
+        run: |
+          python - <<'PY'
+          import json, sys
+          data = json.load(open("dist/listings-api.json"))
+          missing = [r for r in data if r.get("status") == "missing_topic"]
+          for r in missing:
+              print(f"::error::{r.get('detail')}")
+          sys.exit(1 if missing else 0)
+          PY
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: listings-report
+          path: |
+            dist/listings-api.md
+            dist/listings-api.json

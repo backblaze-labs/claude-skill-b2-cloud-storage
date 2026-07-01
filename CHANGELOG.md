@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Marketplace listing-check scripts (`scripts/check_listings_api.py` HTTP probe and
+  `scripts/check_listings.py` Playwright probe) and a scheduled `listings.yml` workflow
+  that runs the HTTP probe weekly, publishes a status report, and fails if the repo loses
+  a discovery topic.
+
 ### Changed
 
 - Moved the skill from `b2-cloud-storage/` to `skills/b2-cloud-storage/` so marketplace
