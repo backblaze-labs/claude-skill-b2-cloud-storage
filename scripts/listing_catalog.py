@@ -54,306 +54,265 @@ class MarketplaceProbe:
     browser: BrowserProbeSpec | None = None
 
 
+RAW_MATCH_TERMS = (REPO_SLUG, "claude-skill-b2-cloud-storage")
+
+
+def http_only(
+    key: str,
+    name: str,
+    url: str,
+    *,
+    match_terms: tuple[str, ...] = HTTP_MATCH_TERMS,
+) -> MarketplaceProbe:
+    return MarketplaceProbe(key=key, http=HttpProbeSpec(name, url, match_terms=match_terms))
+
+
+def browser_only(
+    key: str,
+    name: str,
+    url: str,
+    *,
+    wait_for: str | None = None,
+    negative_terms: tuple[str, ...] = (),
+    match_terms: tuple[str, ...] = BROWSER_MATCH_TERMS,
+    slow: bool = False,
+    search_query: str | None = None,
+    search_locators: tuple[str, ...] = DEFAULT_SEARCH_LOCATORS,
+) -> MarketplaceProbe:
+    return MarketplaceProbe(
+        key=key,
+        browser=BrowserProbeSpec(
+            name,
+            url,
+            wait_for=wait_for,
+            negative_terms=negative_terms,
+            match_terms=match_terms,
+            slow=slow,
+            search_query=search_query,
+            search_locators=search_locators,
+        ),
+    )
+
+
+def shared_probe(
+    key: str,
+    name: str,
+    url: str,
+    *,
+    http_name: str | None = None,
+    browser_name: str | None = None,
+    http_match_terms: tuple[str, ...] = HTTP_MATCH_TERMS,
+    browser_match_terms: tuple[str, ...] = BROWSER_MATCH_TERMS,
+    wait_for: str | None = None,
+    negative_terms: tuple[str, ...] = (),
+    slow: bool = False,
+    search_query: str | None = None,
+    search_locators: tuple[str, ...] = DEFAULT_SEARCH_LOCATORS,
+) -> MarketplaceProbe:
+    return MarketplaceProbe(
+        key=key,
+        http=HttpProbeSpec(http_name or name, url, match_terms=http_match_terms),
+        browser=BrowserProbeSpec(
+            browser_name or name,
+            url,
+            wait_for=wait_for,
+            negative_terms=negative_terms,
+            match_terms=browser_match_terms,
+            slow=slow,
+            search_query=search_query,
+            search_locators=search_locators,
+        ),
+    )
+
+
 MARKETPLACE_PROBES: tuple[MarketplaceProbe, ...] = (
-    MarketplaceProbe(
-        key="skillsmp",
-        http=HttpProbeSpec("SkillsMP (HTML)", "https://skillsmp.com/?q=backblaze"),
-        browser=BrowserProbeSpec(
-            "SkillsMP",
-            "https://skillsmp.com/?q=backblaze",
-            negative_terms=("No skills found",),
-        ),
+    shared_probe(
+        "skillsmp",
+        "SkillsMP",
+        "https://skillsmp.com/?q=backblaze",
+        http_name="SkillsMP (HTML)",
+        negative_terms=("No skills found",),
     ),
-    MarketplaceProbe(
-        key="skillsllm",
-        browser=BrowserProbeSpec(
-            "SkillsLLM",
-            "https://skillsllm.com/?q=backblaze",
-            negative_terms=("No results", "Nothing found"),
-        ),
+    browser_only(
+        "skillsllm",
+        "SkillsLLM",
+        "https://skillsllm.com/?q=backblaze",
+        negative_terms=("No results", "Nothing found"),
     ),
-    MarketplaceProbe(
-        key="lobehub-skills",
-        http=HttpProbeSpec("LobeHub Skills (HTML)", "https://lobehub.com/skills?q=backblaze"),
-        browser=BrowserProbeSpec(
-            "LobeHub Skills",
-            "https://lobehub.com/skills?q=backblaze",
-            negative_terms=("No skills found",),
-        ),
+    shared_probe(
+        "lobehub-skills",
+        "LobeHub Skills",
+        "https://lobehub.com/skills?q=backblaze",
+        http_name="LobeHub Skills (HTML)",
+        negative_terms=("No skills found",),
     ),
-    MarketplaceProbe(
-        key="pawgrammer-skills-market",
-        browser=BrowserProbeSpec(
-            "Pawgrammer Skills Market",
-            "https://skills.pawgrammer.com/?q=backblaze",
-            negative_terms=("No skills found", "couldn't find any skills"),
-        ),
+    browser_only(
+        "pawgrammer-skills-market",
+        "Pawgrammer Skills Market",
+        "https://skills.pawgrammer.com/?q=backblaze",
+        negative_terms=("No skills found", "couldn't find any skills"),
     ),
-    MarketplaceProbe(
-        key="claude-marketplaces",
-        http=HttpProbeSpec("Claude Marketplaces (HTML)", "https://claudemarketplaces.com/"),
-        browser=BrowserProbeSpec(
-            "Claude Marketplaces",
-            "https://claudemarketplaces.com/",
-            negative_terms=("No marketplaces found", "0 results"),
-        ),
+    shared_probe(
+        "claude-marketplaces",
+        "Claude Marketplaces",
+        "https://claudemarketplaces.com/",
+        http_name="Claude Marketplaces (HTML)",
+        negative_terms=("No marketplaces found", "0 results"),
     ),
-    MarketplaceProbe(
-        key="claudeskills-info",
-        browser=BrowserProbeSpec(
-            "ClaudeSkills.info",
-            "https://claudeskills.info/",
-            search_query="backblaze",
-            slow=True,
-            negative_terms=("No skills found",),
-        ),
+    browser_only(
+        "claudeskills-info",
+        "ClaudeSkills.info",
+        "https://claudeskills.info/",
+        search_query="backblaze",
+        slow=True,
+        negative_terms=("No skills found",),
     ),
-    MarketplaceProbe(
-        key="agent-skills-market",
-        browser=BrowserProbeSpec(
-            "Agent Skills Market",
-            "https://www.agentskillsmarket.space/",
-            search_query="backblaze",
-            negative_terms=("No skills found", "0 results"),
-        ),
+    browser_only(
+        "agent-skills-market",
+        "Agent Skills Market",
+        "https://www.agentskillsmarket.space/",
+        search_query="backblaze",
+        negative_terms=("No skills found", "0 results"),
     ),
-    MarketplaceProbe(
-        key="skillhub",
-        browser=BrowserProbeSpec(
-            "SkillHub",
-            "https://skillhub.club/",
-            search_query="backblaze",
-            search_locators=(
-                "input[placeholder='Search Skills...' i]",
-                "input[placeholder*='Search Skills' i]",
-                *DEFAULT_SEARCH_LOCATORS,
-            ),
-            negative_terms=("No results", "No skills"),
+    browser_only(
+        "skillhub",
+        "SkillHub",
+        "https://skillhub.club/",
+        search_query="backblaze",
+        search_locators=(
+            "input[placeholder='Search Skills...' i]",
+            "input[placeholder*='Search Skills' i]",
+            *DEFAULT_SEARCH_LOCATORS,
         ),
+        negative_terms=("No results", "No skills"),
     ),
-    MarketplaceProbe(
-        key="awesome-claude-skills-travisvn",
-        http=HttpProbeSpec(
-            "Awesome Claude Skills (travisvn)",
-            "https://raw.githubusercontent.com/travisvn/awesome-claude-skills/main/README.md",
-        ),
-        browser=BrowserProbeSpec(
-            "Awesome Claude Skills",
-            "https://raw.githubusercontent.com/travisvn/awesome-claude-skills/main/README.md",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-        ),
+    shared_probe(
+        "awesome-claude-skills-travisvn",
+        "Awesome Claude Skills",
+        "https://raw.githubusercontent.com/travisvn/awesome-claude-skills/main/README.md",
+        http_name="Awesome Claude Skills (travisvn)",
+        browser_match_terms=RAW_MATCH_TERMS,
     ),
-    MarketplaceProbe(
-        key="awesome-claude-plugins-chat2anyllm",
-        http=HttpProbeSpec(
-            "Awesome Claude Plugins (Chat2AnyLLM)",
-            "https://raw.githubusercontent.com/Chat2AnyLLM/awesome-claude-plugins/main/README.md",
-        ),
-        browser=BrowserProbeSpec(
-            "Awesome Claude Plugins",
-            "https://raw.githubusercontent.com/Chat2AnyLLM/awesome-claude-plugins/main/README.md",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-        ),
+    shared_probe(
+        "awesome-claude-plugins-chat2anyllm",
+        "Awesome Claude Plugins",
+        "https://raw.githubusercontent.com/Chat2AnyLLM/awesome-claude-plugins/main/README.md",
+        http_name="Awesome Claude Plugins (Chat2AnyLLM)",
+        browser_match_terms=RAW_MATCH_TERMS,
     ),
-    MarketplaceProbe(
-        key="awesome-agent-skills-heilcheng",
-        http=HttpProbeSpec(
-            "Awesome Agent Skills (heilcheng)",
-            "https://raw.githubusercontent.com/heilcheng/awesome-agent-skills/main/README.md",
-        ),
-        browser=BrowserProbeSpec(
-            "Awesome Agent Skills",
-            "https://raw.githubusercontent.com/heilcheng/awesome-agent-skills/main/README.md",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-        ),
+    shared_probe(
+        "awesome-agent-skills-heilcheng",
+        "Awesome Agent Skills",
+        "https://raw.githubusercontent.com/heilcheng/awesome-agent-skills/main/README.md",
+        http_name="Awesome Agent Skills (heilcheng)",
+        browser_match_terms=RAW_MATCH_TERMS,
     ),
-    MarketplaceProbe(
-        key="anthropic-claude-plugins-official",
-        http=HttpProbeSpec(
-            "Anthropic claude-plugins-official",
-            "https://raw.githubusercontent.com/anthropics/claude-plugins-official/main/README.md",
-        ),
-        browser=BrowserProbeSpec(
-            "Anthropic claude-plugins-official",
-            "https://raw.githubusercontent.com/anthropics/claude-plugins-official/main/README.md",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage", "backblaze"),
-        ),
+    shared_probe(
+        "anthropic-claude-plugins-official",
+        "Anthropic claude-plugins-official",
+        "https://raw.githubusercontent.com/anthropics/claude-plugins-official/main/README.md",
+        browser_match_terms=(*RAW_MATCH_TERMS, "backblaze"),
     ),
-    MarketplaceProbe(
-        key="anthropic-skills",
-        http=HttpProbeSpec(
-            "Anthropic skills",
-            "https://raw.githubusercontent.com/anthropics/skills/main/README.md",
-        ),
-        browser=BrowserProbeSpec(
-            "Anthropic skills",
-            "https://raw.githubusercontent.com/anthropics/skills/main/README.md",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage", "backblaze"),
-        ),
+    shared_probe(
+        "anthropic-skills",
+        "Anthropic skills",
+        "https://raw.githubusercontent.com/anthropics/skills/main/README.md",
+        browser_match_terms=(*RAW_MATCH_TERMS, "backblaze"),
     ),
-    MarketplaceProbe(
-        key="claude-com-skills",
-        browser=BrowserProbeSpec(
-            "claude.com Skills",
-            "https://claude.com/skills?q=backblaze",
-            slow=True,
-            negative_terms=("No skills found", "0 results"),
-        ),
+    browser_only(
+        "claude-com-skills",
+        "claude.com Skills",
+        "https://claude.com/skills?q=backblaze",
+        slow=True,
+        negative_terms=("No skills found", "0 results"),
     ),
-    MarketplaceProbe(
-        key="cult-of-claude",
-        http=HttpProbeSpec("Cult of Claude (HTML)", "https://cultofclaude.com/skills/?s=backblaze"),
-        browser=BrowserProbeSpec(
-            "Cult of Claude",
-            "https://cultofclaude.com/skills/?s=backblaze",
-            negative_terms=("Nothing Found", "Sorry, but nothing matched"),
-        ),
+    shared_probe(
+        "cult-of-claude",
+        "Cult of Claude",
+        "https://cultofclaude.com/skills/?s=backblaze",
+        http_name="Cult of Claude (HTML)",
+        negative_terms=("Nothing Found", "Sorry, but nothing matched"),
     ),
-    MarketplaceProbe(
-        key="alirezarezvani-claude-skills",
-        http=HttpProbeSpec(
-            "alirezarezvani/claude-skills",
-            "https://raw.githubusercontent.com/alirezarezvani/claude-skills/main/README.md",
-        ),
-        browser=BrowserProbeSpec(
-            "alirezarezvani/claude-skills",
-            "https://raw.githubusercontent.com/alirezarezvani/claude-skills/main/README.md",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-        ),
+    shared_probe(
+        "alirezarezvani-claude-skills",
+        "alirezarezvani/claude-skills",
+        "https://raw.githubusercontent.com/alirezarezvani/claude-skills/main/README.md",
+        browser_match_terms=RAW_MATCH_TERMS,
     ),
-    MarketplaceProbe(
-        key="daymade-claude-code-skills",
-        http=HttpProbeSpec(
-            "daymade/claude-code-skills",
-            "https://raw.githubusercontent.com/daymade/claude-code-skills/main/README.md",
-        ),
-        browser=BrowserProbeSpec(
-            "daymade/claude-code-skills",
-            "https://raw.githubusercontent.com/daymade/claude-code-skills/main/README.md",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-        ),
+    shared_probe(
+        "daymade-claude-code-skills",
+        "daymade/claude-code-skills",
+        "https://raw.githubusercontent.com/daymade/claude-code-skills/main/README.md",
+        browser_match_terms=RAW_MATCH_TERMS,
     ),
-    MarketplaceProbe(
-        key="mhattingpete-claude-skills-marketplace",
-        http=HttpProbeSpec(
-            "mhattingpete/claude-skills-marketplace",
-            "https://raw.githubusercontent.com/mhattingpete/claude-skills-marketplace/main/README.md",
-        ),
-        browser=BrowserProbeSpec(
-            "mhattingpete/claude-skills-marketplace",
-            "https://raw.githubusercontent.com/mhattingpete/claude-skills-marketplace/main/README.md",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-        ),
+    shared_probe(
+        "mhattingpete-claude-skills-marketplace",
+        "mhattingpete/claude-skills-marketplace",
+        "https://raw.githubusercontent.com/mhattingpete/claude-skills-marketplace/main/README.md",
+        browser_match_terms=RAW_MATCH_TERMS,
     ),
-    MarketplaceProbe(
-        key="voltagent-awesome-agent-skills",
-        http=HttpProbeSpec(
-            "VoltAgent/awesome-agent-skills",
-            "https://raw.githubusercontent.com/VoltAgent/awesome-agent-skills/main/README.md",
-        ),
-        browser=BrowserProbeSpec(
-            "VoltAgent/awesome-agent-skills",
-            "https://raw.githubusercontent.com/VoltAgent/awesome-agent-skills/main/README.md",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-        ),
+    shared_probe(
+        "voltagent-awesome-agent-skills",
+        "VoltAgent/awesome-agent-skills",
+        "https://raw.githubusercontent.com/VoltAgent/awesome-agent-skills/main/README.md",
+        browser_match_terms=RAW_MATCH_TERMS,
     ),
-    MarketplaceProbe(
-        key="hesreallyhim-awesome-claude-code",
-        http=HttpProbeSpec(
-            "hesreallyhim/awesome-claude-code",
-            "https://raw.githubusercontent.com/hesreallyhim/awesome-claude-code/main/README.md",
-        ),
-        browser=BrowserProbeSpec(
-            "hesreallyhim/awesome-claude-code",
-            "https://raw.githubusercontent.com/hesreallyhim/awesome-claude-code/main/README.md",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-        ),
+    shared_probe(
+        "hesreallyhim-awesome-claude-code",
+        "hesreallyhim/awesome-claude-code",
+        "https://raw.githubusercontent.com/hesreallyhim/awesome-claude-code/main/README.md",
+        browser_match_terms=RAW_MATCH_TERMS,
     ),
-    MarketplaceProbe(
-        key="composiohq-awesome-claude-skills",
-        http=HttpProbeSpec(
-            "ComposioHQ/awesome-claude-skills",
-            "https://raw.githubusercontent.com/ComposioHQ/awesome-claude-skills/master/README.md",
-        ),
-        browser=BrowserProbeSpec(
-            "ComposioHQ/awesome-claude-skills",
-            "https://raw.githubusercontent.com/ComposioHQ/awesome-claude-skills/master/README.md",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-        ),
+    shared_probe(
+        "composiohq-awesome-claude-skills",
+        "ComposioHQ/awesome-claude-skills",
+        "https://raw.githubusercontent.com/ComposioHQ/awesome-claude-skills/master/README.md",
+        browser_match_terms=RAW_MATCH_TERMS,
     ),
-    MarketplaceProbe(
-        key="netresearch-claude-code-marketplace-readme",
-        http=HttpProbeSpec(
-            "netresearch/claude-code-marketplace (README)",
-            "https://raw.githubusercontent.com/netresearch/claude-code-marketplace/main/README.md",
-        ),
+    http_only(
+        "netresearch-claude-code-marketplace-readme",
+        "netresearch/claude-code-marketplace (README)",
+        "https://raw.githubusercontent.com/netresearch/claude-code-marketplace/main/README.md",
     ),
-    MarketplaceProbe(
-        key="netresearch-claude-code-marketplace-manifest",
-        http=HttpProbeSpec(
-            "netresearch/claude-code-marketplace (manifest)",
-            "https://raw.githubusercontent.com/netresearch/claude-code-marketplace/main/.claude-plugin/marketplace.json",
-        ),
-        browser=BrowserProbeSpec(
-            "netresearch/claude-code-marketplace",
-            "https://raw.githubusercontent.com/netresearch/claude-code-marketplace/main/.claude-plugin/marketplace.json",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage", "b2-cloud-storage"),
-        ),
+    shared_probe(
+        "netresearch-claude-code-marketplace-manifest",
+        "netresearch/claude-code-marketplace",
+        "https://raw.githubusercontent.com/netresearch/claude-code-marketplace/main/.claude-plugin/marketplace.json",
+        http_name="netresearch/claude-code-marketplace (manifest)",
+        browser_match_terms=(*RAW_MATCH_TERMS, "b2-cloud-storage"),
     ),
-    MarketplaceProbe(
-        key="rohitg00-awesome-claude-code-toolkit",
-        http=HttpProbeSpec(
-            "rohitg00/awesome-claude-code-toolkit",
-            "https://raw.githubusercontent.com/rohitg00/awesome-claude-code-toolkit/main/README.md",
-        ),
-        browser=BrowserProbeSpec(
-            "rohitg00/awesome-claude-code-toolkit",
-            "https://raw.githubusercontent.com/rohitg00/awesome-claude-code-toolkit/main/README.md",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-        ),
+    shared_probe(
+        "rohitg00-awesome-claude-code-toolkit",
+        "rohitg00/awesome-claude-code-toolkit",
+        "https://raw.githubusercontent.com/rohitg00/awesome-claude-code-toolkit/main/README.md",
+        browser_match_terms=RAW_MATCH_TERMS,
     ),
-    MarketplaceProbe(
-        key="behisecc-awesome-claude-skills",
-        http=HttpProbeSpec(
-            "BehiSecc/awesome-claude-skills",
-            "https://raw.githubusercontent.com/BehiSecc/awesome-claude-skills/main/README.md",
-        ),
-        browser=BrowserProbeSpec(
-            "BehiSecc/awesome-claude-skills",
-            "https://raw.githubusercontent.com/BehiSecc/awesome-claude-skills/main/README.md",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-        ),
+    shared_probe(
+        "behisecc-awesome-claude-skills",
+        "BehiSecc/awesome-claude-skills",
+        "https://raw.githubusercontent.com/BehiSecc/awesome-claude-skills/main/README.md",
+        browser_match_terms=RAW_MATCH_TERMS,
     ),
-    MarketplaceProbe(
-        key="jqueryscript-awesome-claude-code",
-        http=HttpProbeSpec(
-            "jqueryscript/awesome-claude-code",
-            "https://raw.githubusercontent.com/jqueryscript/awesome-claude-code/main/README.md",
-        ),
-        browser=BrowserProbeSpec(
-            "jqueryscript/awesome-claude-code",
-            "https://raw.githubusercontent.com/jqueryscript/awesome-claude-code/main/README.md",
-            match_terms=(REPO_SLUG, "claude-skill-b2-cloud-storage"),
-        ),
+    shared_probe(
+        "jqueryscript-awesome-claude-code",
+        "jqueryscript/awesome-claude-code",
+        "https://raw.githubusercontent.com/jqueryscript/awesome-claude-code/main/README.md",
+        browser_match_terms=RAW_MATCH_TERMS,
     ),
-    MarketplaceProbe(
-        key="mcp-market-skills",
-        browser=BrowserProbeSpec(
-            "MCP Market — Skills",
-            "https://mcpmarket.com/tools/skills?q=backblaze",
-            slow=True,
-            negative_terms=("No skills found", "No results", "0 results"),
-        ),
+    browser_only(
+        "mcp-market-skills",
+        "MCP Market — Skills",
+        "https://mcpmarket.com/tools/skills?q=backblaze",
+        slow=True,
+        negative_terms=("No skills found", "No results", "0 results"),
     ),
-    MarketplaceProbe(
-        key="awesomeclaude-ai",
-        browser=BrowserProbeSpec(
-            "awesomeclaude.ai",
-            "https://awesomeclaude.ai/awesome-claude-skills",
-            search_query="backblaze",
-            slow=True,
-            negative_terms=("No skills found", "No results"),
-        ),
+    browser_only(
+        "awesomeclaude-ai",
+        "awesomeclaude.ai",
+        "https://awesomeclaude.ai/awesome-claude-skills",
+        search_query="backblaze",
+        slow=True,
+        negative_terms=("No skills found", "No results"),
     ),
 )
 

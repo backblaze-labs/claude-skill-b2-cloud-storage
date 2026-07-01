@@ -28,6 +28,7 @@ jobs:
           python-version: "3.12"
 
       - name: Probe marketplaces (HTTP-only, no browser)
+        timeout-minutes: 10
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -52,6 +53,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: listings-report
+          if-no-files-found: warn
           path: |
             dist/listings-api.md
             dist/listings-api.json

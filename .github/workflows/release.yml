@@ -28,8 +28,14 @@ jobs:
         run: python scripts/build_artifacts.py "${{ github.ref_name }}"
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
-        with:
-          files: dist/*
-          generate_release_notes: true
-          fail_on_unmatched_files: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          artifacts=(dist/*)
+          if (( ${#artifacts[@]} == 0 )); then
+            echo "::error::No release artifacts found in dist/"
+            exit 1
+          fi
+          gh release create "${GITHUB_REF_NAME}" "${artifacts[@]}" \
+            --generate-notes --title "${GITHUB_REF_NAME}"

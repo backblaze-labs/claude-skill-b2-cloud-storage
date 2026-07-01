@@ -59,7 +59,7 @@ def local_probe_server() -> Iterator[str]:
 
 def test_http_get_rejects_oversized_response(local_probe_server: str) -> None:
     with pytest.raises(check_listings_api.ResponseTooLarge):
-        check_listings_api._http_get(
+        check_listings_api.http_get_limited(
             f"{local_probe_server}/large",
             max_bytes=1024,
             timeout=1,
@@ -70,7 +70,7 @@ def test_http_get_rejects_oversized_response(local_probe_server: str) -> None:
 def test_http_get_enforces_total_read_deadline(local_probe_server: str) -> None:
     started = time.monotonic()
     with pytest.raises(TimeoutError):
-        check_listings_api._http_get(
+        check_listings_api.http_get_limited(
             f"{local_probe_server}/slow",
             max_bytes=4096,
             timeout=1,
@@ -102,7 +102,7 @@ def test_github_metadata_retries_before_succeeding(monkeypatch: pytest.MonkeyPat
             {},
         )
 
-    monkeypatch.setattr(check_listings_api, "_http_get", fake_http_get)
+    monkeypatch.setattr(check_listings_api, "http_get_limited", fake_http_get)
     monkeypatch.setattr(check_listings_api.time, "sleep", lambda _seconds: None)
 
     result = check_listings_api.check_github_repo(backoff_seconds=(0.0, 0.0))

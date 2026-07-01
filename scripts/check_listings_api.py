@@ -107,7 +107,7 @@ def _read_limited_body(response: object, *, max_bytes: int, deadline: float) -> 
             raise ResponseTooLarge(msg)
 
 
-def _http_get(
+def http_get_limited(
     url: str,
     *,
     headers: dict[str, str] | None = None,
@@ -115,6 +115,7 @@ def _http_get(
     max_bytes: int = MAX_RESPONSE_BYTES,
     total_timeout: float = HTTP_TOTAL_TIMEOUT_SECONDS,
 ) -> tuple[int, str, dict[str, str]]:
+    """Fetch a URL with bounded response size and total body-read time."""
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
     deadline = time.monotonic() + total_timeout
     try:
@@ -175,7 +176,7 @@ def check_github_repo(
     last_detail = "unknown error"
     for attempt in range(1, attempts + 1):
         try:
-            code, body, _ = _http_get(url, headers=headers)
+            code, body, _ = http_get_limited(url, headers=headers)
             if code != 200:
                 last_detail = f"HTTP {code}"
                 if attempt < attempts and _is_retryable_status(code):
@@ -227,7 +228,7 @@ def check_text_probe(probe: HttpProbeSpec) -> Result:
     """Fetch a URL, grep for any of `terms`."""
     started = datetime.now(timezone.utc)
     try:
-        code, body, _ = _http_get(probe.url)
+        code, body, _ = http_get_limited(probe.url)
         elapsed = _elapsed_ms(started)
         if code >= 400:
             return Result(
