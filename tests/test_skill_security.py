@@ -12,7 +12,10 @@ DOCS_WITH_INSTALL_GUIDANCE = [
     *sorted((SKILL_DIR / "references").glob("*.md")),
 ]
 
-UNPINNED_B2_INSTALL = re.compile(r"\bpip3?\s+install\s+(?:--\S+\s+)*b2\b", re.IGNORECASE)
+UNPINNED_B2_INSTALL = re.compile(
+    r"\b(?:python3?\s+-m\s+)?pip3?\s+install\s+(?:--\S+\s+)*b2(?=\s|$)",
+    re.IGNORECASE,
+)
 
 
 def test_skill_does_not_allow_package_install_tools() -> None:
@@ -36,3 +39,12 @@ def test_docs_do_not_instruct_unpinned_b2_install() -> None:
     assert unsafe_matches == {
         path.relative_to(ROOT).as_posix(): [] for path in DOCS_WITH_INSTALL_GUIDANCE
     }
+
+
+def test_unpinned_b2_install_pattern_allows_pinned_package_specs() -> None:
+    assert UNPINNED_B2_INSTALL.search("pip install b2")
+    assert UNPINNED_B2_INSTALL.search("pip3 install --user b2")
+    assert UNPINNED_B2_INSTALL.search("python -m pip install b2")
+    assert not UNPINNED_B2_INSTALL.search("pip install b2==4.0.0 --hash=sha256:abc")
+    assert not UNPINNED_B2_INSTALL.search("pip install b2~=4.0")
+    assert not UNPINNED_B2_INSTALL.search("pip install b2>=4")
