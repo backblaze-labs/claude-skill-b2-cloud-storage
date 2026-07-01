@@ -6,8 +6,8 @@ truth for SPA-rendered marketplace pages; this script covers everything that
 can be checked with plain HTTP:
 
   * GitHub repo metadata for ``backblaze-labs/claude-skill-b2-cloud-storage``
-    (topics, stars, archived flag, latest release) — answers "did anyone
-    forget to add the ``skillsmp`` topic?"
+    (topics, stars, archived flag) — answers "did anyone forget to add the
+    ``skillsmp`` topic?"
   * Raw README of every awesome-list / community marketplace that aggregates
     skills from GitHub. Plain text grep — zero false positives.
   * Anthropic's official skills/plugins directories (raw README).
@@ -26,7 +26,8 @@ Usage::
 Exit codes:
   0 — every probe completed (live or not_found, no errors)
   1 — at least one probe errored (network, HTTP 5xx, etc.)
-  2 — a hard expectation failed (e.g. repo missing required topics)
+  2 — ``--strict`` is set and a hard expectation failed (e.g. repo missing
+      required topics)
 """
 
 from __future__ import annotations

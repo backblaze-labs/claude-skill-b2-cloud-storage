@@ -359,6 +359,7 @@ def run_probe(page: Page, probe: Probe, save_screenshots: bool) -> Result:
         response = page.goto(probe.url, wait_until="domcontentloaded", timeout=timeout)
         if response is None:
             result.error = "no response"
+            return result
         elif response.status >= 400:
             result.status = "blocked" if response.status in (401, 403, 429) else "error"
             result.error = f"HTTP {response.status}"
