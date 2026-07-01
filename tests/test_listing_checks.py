@@ -25,8 +25,8 @@ class _OversizedAndSlowHandler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
             return
 
-        if self.path == "/slow":
-            self.send_response(200)
+        if self.path in {"/slow", "/slow-error"}:
+            self.send_response(500 if self.path == "/slow-error" else 200)
             self.send_header("Transfer-Encoding", "chunked")
             self.end_headers()
             with contextlib.suppress(BrokenPipeError, ConnectionResetError):
@@ -72,6 +72,20 @@ def test_http_get_enforces_total_read_deadline(local_probe_server: str) -> None:
     with pytest.raises(TimeoutError):
         check_listings_api.http_get_limited(
             f"{local_probe_server}/slow",
+            max_bytes=4096,
+            timeout=1,
+            total_timeout=0.12,
+        )
+    assert time.monotonic() - started < 1
+
+
+def test_http_get_enforces_total_read_deadline_for_error_response(
+    local_probe_server: str,
+) -> None:
+    started = time.monotonic()
+    with pytest.raises(TimeoutError):
+        check_listings_api.http_get_limited(
+            f"{local_probe_server}/slow-error",
             max_bytes=4096,
             timeout=1,
             total_timeout=0.12,

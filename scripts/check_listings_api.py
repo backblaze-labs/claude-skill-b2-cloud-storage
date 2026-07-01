@@ -80,19 +80,29 @@ class Result:
 
 
 def _set_response_read_timeout(response: object, timeout: float) -> None:
-    current = response
-    for attr in ("fp", "raw", "_sock"):
-        current = getattr(current, attr, None)
-        if current is None:
-            return
-    settimeout = getattr(current, "settimeout", None)
-    if callable(settimeout):
-        settimeout(max(timeout, 0.001))
+    for attr_path in (("fp", "raw", "_sock"), ("raw", "_sock"), ("_sock",)):
+        current = response
+        for attr in attr_path:
+            current = getattr(current, attr, None)
+            if current is None:
+                break
+        else:
+            settimeout = getattr(current, "settimeout", None)
+            if callable(settimeout):
+                settimeout(max(timeout, 0.001))
+                return
 
 
-def _read_limited_body(response: object, *, max_bytes: int, deadline: float) -> bytes:
-    headers = getattr(response, "headers", {})
-    content_length = headers.get("Content-Length") if headers else None
+def _read_limited_body(
+    response: object,
+    *,
+    max_bytes: int,
+    deadline: float,
+    headers: object | None = None,
+) -> bytes:
+    response_headers = headers if headers is not None else getattr(response, "headers", None)
+    header_get = getattr(response_headers, "get", None)
+    content_length = header_get("Content-Length") if callable(header_get) else None
     if content_length:
         try:
             if int(content_length) > max_bytes:
@@ -140,9 +150,12 @@ def http_get_limited(
     except urllib.error.HTTPError as e:
         body = ""
         if e.fp:
-            body = _read_limited_body(e, max_bytes=max_bytes, deadline=deadline).decode(
-                "utf-8", errors="replace"
-            )
+            body = _read_limited_body(
+                e.fp,
+                max_bytes=max_bytes,
+                deadline=deadline,
+                headers=e.headers,
+            ).decode("utf-8", errors="replace")
         return e.code, body, dict(e.headers or {})
 
 
