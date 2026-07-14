@@ -1,4 +1,4 @@
-# Claude Skill: Backblaze B2 Cloud Storage Manager
+# Backblaze B2 Cloud Storage — a skill for Claude Code
 
 [![CI](https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/actions/workflows/ci.yml/badge.svg)](https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -7,7 +7,7 @@
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![Spell-checked: cspell](https://img.shields.io/badge/spell--check-cspell-blue)](https://cspell.org/)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-8B5CF6?logo=anthropic&logoColor=white)](https://claude.ai/code)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-8B5CF6)](https://claude.ai/code)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-spec-FF6B35)](https://agentskills.io)
 [![Backblaze B2](https://img.shields.io/badge/Backblaze-B2-E8231A?logo=backblaze&logoColor=white)](https://www.backblaze.com/cloud-storage)
 [![GitHub stars](https://img.shields.io/github/stars/backblaze-labs/claude-skill-b2-cloud-storage?style=flat&logo=github)](https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/stargazers)
@@ -256,3 +256,10 @@ claude-skill-b2-cloud-storage/
 ## License
 
 MIT
+
+## Trademarks
+
+This skill is an independent, community-maintained project. It is not affiliated
+with, sponsored, or endorsed by Anthropic. Claude and Claude Code are trademarks
+of Anthropic. Backblaze and Backblaze B2 are trademarks of Backblaze.
+References to these products are for identification and compatibility purposes only.

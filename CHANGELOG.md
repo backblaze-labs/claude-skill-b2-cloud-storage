@@ -25,9 +25,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Directory contact/security-channel requirement.
 - Top-level **Privacy** section in the README stating the skill collects no data and
   transmits nothing to the authors, with a link to Backblaze's privacy policy.
+- **Trademarks** section in the README disclaiming Anthropic affiliation/endorsement and
+  attributing the Claude, Claude Code, and Backblaze marks to their owners, aligning with
+  Anthropic's trademark guidelines.
 
 ### Changed
 
+- Trademark-compliance edits to the README: retitled the heading to "Backblaze B2 Cloud
+  Storage — a skill for Claude Code" (was "Claude Skill: …", which read as a product name),
+  and removed the Anthropic logo from the Claude Code badge (an unauthorized, recolored
+  rendering of the mark).
 - Moved the skill from `b2-cloud-storage/` to `skills/b2-cloud-storage/` so marketplace
   crawlers that scan the conventional `skills/<name>/SKILL.md` path can discover it. Release
   artifacts still root at `b2-cloud-storage/`, so install commands and URLs are unchanged.
