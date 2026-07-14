@@ -1,7 +1,7 @@
 # Claude Skill: Backblaze B2 Cloud Storage Manager
 
 [![CI](https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/actions/workflows/ci.yml/badge.svg)](https://github.com/backblaze-labs/claude-skill-b2-cloud-storage/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10–3.14](https://img.shields.io/badge/python-3.10%E2%80%933.14-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
@@ -212,6 +212,19 @@ An example config file is included at [`skills/b2-cloud-storage/b2-config.exampl
 - All operations default to read-only
 - API keys are never stored or displayed by the skill
 - If you accidentally paste keys into chat, the skill warns you to rotate them
+
+To report a security vulnerability, see [`SECURITY.md`](SECURITY.md).
+
+## Privacy
+
+This skill collects no data. It ships no telemetry and sends nothing to the skill's
+authors or any third party. Every operation runs locally: the skill invokes the
+user-installed `b2` CLI, which talks only to Backblaze B2 using **your own** credentials.
+Those credentials are stored by the `b2` CLI in `~/.b2_account_info` and are never read,
+stored, or transmitted by the skill (see [Security](#security)).
+
+Data you store in or retrieve from Backblaze B2 is governed by Backblaze's
+[Privacy Policy](https://www.backblaze.com/company/policy/privacy).
 
 ## File Structure
 
