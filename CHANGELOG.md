@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `skills/b2-cloud-storage/.claude-plugin/plugin.json` plugin manifest, so the skill can be
   submitted to the Anthropic community plugin marketplace and pass `claude plugin validate`.
   Its `version` is kept in sync by `release.py` and enforced by `check_version.py`.
+- `SECURITY.md` vulnerability-disclosure policy (private GitHub advisories for skill-code
+  issues; Backblaze Trust Center for B2-platform issues), satisfying the Anthropic Software
+  Directory contact/security-channel requirement.
+- Top-level **Privacy** section in the README stating the skill collects no data and
+  transmits nothing to the authors, with a link to Backblaze's privacy policy.
 
 ### Changed
 
@@ -29,13 +34,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed ZIP release artifact paths so they keep the public `b2-cloud-storage/` archive root.
 - Removed agent-managed B2 CLI package installation guidance; users install the CLI themselves.
 
+### Fixed
+
+- License badge in the README now links to the actual `LICENSE` file (was a dead
+  `LICENSE.txt` link).
+
 ## [1.2.0] - 2026-04-28
 
 ### Added
 
 - `.claude-plugin/marketplace.json` — Claude Code plugin marketplace manifest, enabling auto-discovery on
   [claudemarketplaces.com](https://claudemarketplaces.com) and one-command install via `/plugin marketplace add`.
-- `LICENSE.txt` — explicit MIT license file (was previously declared in frontmatter only).
+- `LICENSE` — explicit MIT license file (was previously declared in frontmatter only).
 - `RELEASE.md` — release runbook documenting the single-command flow.
 - `CHANGELOG.md` (this file).
 - Release tooling under `scripts/`:
