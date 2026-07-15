@@ -89,13 +89,11 @@ def _check_page_text(text: str, probe: BrowserProbeSpec) -> tuple[Status, str | 
 
 def _dismiss_overlays(page: Page) -> None:
     """Best-effort: close common modals/banners that block search input."""
-    # Two Escape presses — some modals require it; one to defocus, one to close.
+    # Two Escape presses (defocus, then close); best-effort, so ignore input errors.
     for _ in range(2):
-        try:
+        with contextlib.suppress(Exception):
             page.keyboard.press("Escape", timeout=500)
             page.wait_for_timeout(150)
-        except Exception:
-            pass
     candidates = (
         'button[aria-label="Dismiss"]',
         'button[aria-label="Close"]',
@@ -216,11 +214,10 @@ def run_probe(page: Page, probe: BrowserProbeSpec, save_screenshots: bool) -> Re
         if save_screenshots and probe.url.startswith("http") and result.status != "error":
             SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
             path = screenshot_path_for_probe(probe.name)
-            try:
+            # Screenshots are evidence, not required output; never fail the probe over one.
+            with contextlib.suppress(Exception):
                 page.screenshot(path=str(path), full_page=True)
                 result.screenshot = str(path.relative_to(REPO_ROOT))
-            except Exception:
-                pass
         result.duration_ms = int((datetime.now(timezone.utc) - started).total_seconds() * 1000)
     return result
 

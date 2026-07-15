@@ -36,7 +36,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shlex
 import subprocess
+import sys
 from datetime import date
 from pathlib import Path
 
@@ -158,11 +160,23 @@ def _update_changelog_links(text: str, new_version: str, previous_version: str) 
 
 
 def run(cmd: list[str]) -> str:
-    return subprocess.run(cmd, check=True, capture_output=True, text=True).stdout.strip()
+    try:
+        return subprocess.run(cmd, check=True, capture_output=True, text=True).stdout.strip()
+    except subprocess.CalledProcessError as exc:
+        # Surface git's own stderr (e.g. why a checkout/status failed) instead of a
+        # bare CalledProcessError traceback.
+        details = (exc.stderr or exc.stdout or "").strip()
+        message = f"Command failed (exit {exc.returncode}): {shlex.join(cmd)}"
+        if details:
+            message = f"{message}\n{details}"
+        print(message, file=sys.stderr)
+        raise SystemExit(exc.returncode) from None
 
 
 def ensure_clean_tree() -> None:
-    if run(["git", "status", "--porcelain"]):
+    # `run` already strips, so a non-empty result means there are pending changes.
+    status = run(["git", "status", "--porcelain"])
+    if status:
         raise SystemExit("Working tree is not clean. Commit or stash first.")
 
 
@@ -221,7 +235,7 @@ def main() -> None:
         return
 
     tag = f"v{new_version}"
-    run(["git", "add", *[str(p) for p in files_to_stage]])
+    run(["git", "add", *(str(p) for p in files_to_stage)])
     run(["git", "commit", "-m", f"chore: release {tag}"])
     print(f"  Committed: chore: release {tag}")
 

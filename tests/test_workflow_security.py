@@ -7,7 +7,11 @@ from typing import Any
 import yaml
 
 WORKFLOW_DIR = Path(__file__).parent.parent / ".github" / "workflows"
-PINNED_ACTION = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*@[a-f0-9]{40}$")
+# Fully pinned `uses`: owner/repo@<40-char sha> or owner/repo/sub/path@<40-char sha>.
+PINNED_ACTION = re.compile(
+    r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*@[a-f0-9]{40}$",
+    re.IGNORECASE,
+)
 
 
 def _workflow_docs() -> list[tuple[Path, dict[str, Any]]]:
@@ -39,7 +43,10 @@ def test_workflow_actions_are_pinned_to_full_commit_shas() -> None:
     for path, step in _workflow_steps():
         uses = step.get("uses")
         if isinstance(uses, str) and not PINNED_ACTION.match(uses):
-            unpinned.append(f"{path.name}: {uses}")
+            unpinned.append(
+                f"{path.name}: {uses} "
+                "(pin to the full 40-character commit SHA, e.g. owner/repo@<sha>)"
+            )
 
     assert unpinned == []
 
@@ -48,12 +55,17 @@ def test_pinned_action_allows_subdirectory_actions() -> None:
     assert PINNED_ACTION.match(f"github/codeql-action/init@{'a' * 40}") is not None
 
 
+def test_pinned_action_allows_uppercase_shas() -> None:
+    assert PINNED_ACTION.match(f"actions/checkout@{'A' * 40}") is not None
+
+
 def test_checkout_does_not_persist_credentials() -> None:
     unsafe = []
     for path, step in _workflow_steps():
         uses = step.get("uses")
         if isinstance(uses, str) and uses.startswith("actions/checkout@"):
             with_config = step.get("with") or {}
+            # Must be explicitly False; a missing/None persist-credentials is unsafe.
             if (
                 not isinstance(with_config, dict)
                 or with_config.get("persist-credentials") is not False
