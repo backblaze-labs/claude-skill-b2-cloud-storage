@@ -37,6 +37,7 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 from datetime import date
 from pathlib import Path
 
@@ -167,7 +168,8 @@ def run(cmd: list[str]) -> str:
         message = f"Command failed (exit {exc.returncode}): {' '.join(cmd)}"
         if details:
             message = f"{message}\n{details}"
-        raise SystemExit(message) from None
+        print(message, file=sys.stderr)
+        raise SystemExit(exc.returncode) from None
 
 
 def ensure_clean_tree() -> None:
