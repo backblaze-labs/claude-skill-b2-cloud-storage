@@ -8,7 +8,10 @@ import yaml
 
 WORKFLOW_DIR = Path(__file__).parent.parent / ".github" / "workflows"
 # Fully pinned `uses`: owner/repo@<40-char sha> or owner/repo/sub/path@<40-char sha>.
-PINNED_ACTION = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*@[a-f0-9]{40}$")
+PINNED_ACTION = re.compile(
+    r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*@[a-f0-9]{40}$",
+    re.IGNORECASE,
+)
 
 
 def _workflow_docs() -> list[tuple[Path, dict[str, Any]]]:
@@ -50,6 +53,10 @@ def test_workflow_actions_are_pinned_to_full_commit_shas() -> None:
 
 def test_pinned_action_allows_subdirectory_actions() -> None:
     assert PINNED_ACTION.match(f"github/codeql-action/init@{'a' * 40}") is not None
+
+
+def test_pinned_action_allows_uppercase_shas() -> None:
+    assert PINNED_ACTION.match(f"actions/checkout@{'A' * 40}") is not None
 
 
 def test_checkout_does_not_persist_credentials() -> None:

@@ -36,6 +36,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shlex
 import subprocess
 import sys
 from datetime import date
@@ -165,7 +166,7 @@ def run(cmd: list[str]) -> str:
         # Surface git's own stderr (e.g. why a checkout/status failed) instead of a
         # bare CalledProcessError traceback.
         details = (exc.stderr or exc.stdout or "").strip()
-        message = f"Command failed (exit {exc.returncode}): {' '.join(cmd)}"
+        message = f"Command failed (exit {exc.returncode}): {shlex.join(cmd)}"
         if details:
             message = f"{message}\n{details}"
         print(message, file=sys.stderr)
