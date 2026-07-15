@@ -20,9 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `skills/b2-cloud-storage/.claude-plugin/plugin.json` plugin manifest, so the skill can be
   submitted to the Anthropic community plugin marketplace and pass `claude plugin validate`.
   Its `version` is kept in sync by `release.py` and enforced by `check_version.py`.
-- `SECURITY.md` vulnerability-disclosure policy (private GitHub advisories for skill-code
-  issues; Backblaze Trust Center for B2-platform issues), satisfying the Anthropic Software
-  Directory contact/security-channel requirement.
+- `SECURITY.md` vulnerability-disclosure policy: in/out-of-scope reporting (private GitHub
+  advisories for skill-code issues; Backblaze Trust Center for B2-platform issues; Anthropic
+  for Claude Code / API issues), best-effort response targets, and a data-handling section
+  (no telemetry, credentials never logged, dry-run-gated deletions, no hooks) that links to
+  the README Privacy/Security and contributor security rules. Satisfies the Anthropic
+  Software Directory contact/security-channel requirement.
+- `.github/dependabot.yml` — weekly `github-actions` version updates that bump the
+  SHA-pinned action references, complementing the existing pinning and secret-scanning /
+  Dependabot-alerts settings already enabled on the repository.
 - Top-level **Privacy** section in the README stating the skill collects no data and
   transmits nothing to the authors, with a link to Backblaze's privacy policy.
 - **Trademarks** section in the README disclaiming Anthropic affiliation/endorsement and

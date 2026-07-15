@@ -1,0 +1,18 @@
+# Keeps third-party GitHub Actions current. The workflows SHA-pin every action, which
+# freezes them; Dependabot proposes weekly PRs that bump those pins to the latest release
+# with the version noted in a trailing comment. This is the intended complement to pinning
+# and satisfies the OpenSSF Scorecard dependency-update-tool check.
+#
+# Only the github-actions ecosystem is tracked. The Python dev tooling (ruff, pytest,
+# pyyaml) is installed unpinned in CI with no manifest for Dependabot to read; pre-commit
+# hooks are updated via `pre-commit autoupdate` (see CONTRIBUTING.md).
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
