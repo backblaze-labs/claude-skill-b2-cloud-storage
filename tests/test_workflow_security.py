@@ -58,6 +58,7 @@ def test_checkout_does_not_persist_credentials() -> None:
         uses = step.get("uses")
         if isinstance(uses, str) and uses.startswith("actions/checkout@"):
             with_config = step.get("with") or {}
+            # Must be explicitly False; a missing/None persist-credentials is unsafe.
             if (
                 not isinstance(with_config, dict)
                 or with_config.get("persist-credentials") is not False

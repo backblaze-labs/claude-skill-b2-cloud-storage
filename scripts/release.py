@@ -171,7 +171,9 @@ def run(cmd: list[str]) -> str:
 
 
 def ensure_clean_tree() -> None:
-    if run(["git", "status", "--porcelain"]):
+    # `run` already strips, so a non-empty result means there are pending changes.
+    status = run(["git", "status", "--porcelain"])
+    if status:
         raise SystemExit("Working tree is not clean. Commit or stash first.")
 
 
@@ -230,7 +232,7 @@ def main() -> None:
         return
 
     tag = f"v{new_version}"
-    run(["git", "add", *[str(p) for p in files_to_stage]])
+    run(["git", "add", *(str(p) for p in files_to_stage)])
     run(["git", "commit", "-m", f"chore: release {tag}"])
     print(f"  Committed: chore: release {tag}")
 
