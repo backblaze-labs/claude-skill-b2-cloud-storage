@@ -158,7 +158,16 @@ def _update_changelog_links(text: str, new_version: str, previous_version: str) 
 
 
 def run(cmd: list[str]) -> str:
-    return subprocess.run(cmd, check=True, capture_output=True, text=True).stdout.strip()
+    try:
+        return subprocess.run(cmd, check=True, capture_output=True, text=True).stdout.strip()
+    except subprocess.CalledProcessError as exc:
+        # Surface git's own stderr (e.g. why a checkout/status failed) instead of a
+        # bare CalledProcessError traceback.
+        details = (exc.stderr or exc.stdout or "").strip()
+        message = f"Command failed (exit {exc.returncode}): {' '.join(cmd)}"
+        if details:
+            message = f"{message}\n{details}"
+        raise SystemExit(message) from None
 
 
 def ensure_clean_tree() -> None:

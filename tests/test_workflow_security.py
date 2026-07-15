@@ -7,6 +7,7 @@ from typing import Any
 import yaml
 
 WORKFLOW_DIR = Path(__file__).parent.parent / ".github" / "workflows"
+# Fully pinned `uses`: owner/repo@<40-char sha> or owner/repo/sub/path@<40-char sha>.
 PINNED_ACTION = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*@[a-f0-9]{40}$")
 
 
@@ -39,7 +40,10 @@ def test_workflow_actions_are_pinned_to_full_commit_shas() -> None:
     for path, step in _workflow_steps():
         uses = step.get("uses")
         if isinstance(uses, str) and not PINNED_ACTION.match(uses):
-            unpinned.append(f"{path.name}: {uses}")
+            unpinned.append(
+                f"{path.name}: {uses} "
+                "(pin to the full 40-character commit SHA, e.g. owner/repo@<sha>)"
+            )
 
     assert unpinned == []
 

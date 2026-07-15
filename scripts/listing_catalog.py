@@ -4,6 +4,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+# Public surface consumed by the sibling checkers (check_listings*.py) and tests.
+# HTTP_PROBES / BROWSER_PROBES look unused within this module, but are imported
+# elsewhere; listing them here documents the export and satisfies that analysis.
+__all__ = [
+    "BROWSER_PROBES",
+    "HTTP_PROBES",
+    "REPO_SLUG",
+    "SKILL_NAME",
+    "BrowserProbeSpec",
+    "HttpProbeSpec",
+]
+
 REPO_SLUG = "backblaze-labs/claude-skill-b2-cloud-storage"
 SKILL_NAME = "b2-cloud-storage"
 
