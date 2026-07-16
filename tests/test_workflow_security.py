@@ -14,6 +14,9 @@ PINNED_ACTION = re.compile(
 )
 # First-party namespaces trusted in write-token jobs (e.g. actions/*, github/codeql-action).
 TRUSTED_ACTION_PREFIXES = ("actions/", "github/")
+# Workflows exempt from the read-only permission policy because they legitimately need write
+# access (e.g. release/publish automation). Keep this set small and review additions carefully.
+WRITE_PERMISSION_WORKFLOW_EXEMPTIONS = {"release.yml"}
 # Sentinel so an absent `permissions:` key is distinguishable from an explicit `{}`.
 _MISSING = object()
 
@@ -83,7 +86,7 @@ def test_checkout_does_not_persist_credentials() -> None:
 def test_non_release_workflows_are_explicitly_read_only() -> None:
     unsafe = []
     for path, data in _workflow_docs():
-        if path.name == "release.yml":
+        if path.name in WRITE_PERMISSION_WORKFLOW_EXEMPTIONS:
             continue
         permissions = data.get("permissions")
         if permissions is None:
