@@ -116,6 +116,9 @@ def test_write_token_jobs_only_use_trusted_actions() -> None:
                 continue
             for step in job.get("steps", []):
                 uses = step.get("uses")
+                if isinstance(uses, str) and uses.startswith("./"):
+                    # Local actions are in-repo references; exempt from trust/pinning checks.
+                    continue
                 if isinstance(uses, str) and (
                     not uses.startswith(TRUSTED_ACTION_PREFIXES) or not PINNED_ACTION.match(uses)
                 ):
