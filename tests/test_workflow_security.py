@@ -12,6 +12,8 @@ PINNED_ACTION = re.compile(
     r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*@[a-f0-9]{40}$",
     re.IGNORECASE,
 )
+# First-party namespaces trusted in write-token jobs (e.g. actions/*, github/codeql-action).
+TRUSTED_ACTION_PREFIXES = ("actions/", "github/")
 
 
 def _workflow_docs() -> list[tuple[Path, dict[str, Any]]]:
@@ -96,7 +98,7 @@ def test_write_token_jobs_only_use_trusted_actions() -> None:
                 continue
             for step in job.get("steps", []):
                 uses = step.get("uses")
-                if isinstance(uses, str) and not uses.startswith("actions/"):
+                if isinstance(uses, str) and not uses.startswith(TRUSTED_ACTION_PREFIXES):
                     unsafe.append(f"{path.name}:{job_name}:{uses}")
 
     assert unsafe == []
