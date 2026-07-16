@@ -68,7 +68,7 @@ def test_checkout_does_not_persist_credentials() -> None:
     unsafe = []
     for path, step in _workflow_steps():
         uses = step.get("uses")
-        if isinstance(uses, str) and uses.startswith("actions/checkout@"):
+        if isinstance(uses, str) and "@" in uses and uses.split("@", 1)[0] == "actions/checkout":
             with_config = step.get("with") or {}
             # Must be explicitly False; a missing/None persist-credentials is unsafe.
             if (
