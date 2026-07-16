@@ -89,7 +89,13 @@ def test_non_release_workflows_are_explicitly_read_only() -> None:
             # Keep policy explicit: a missing permissions key is treated as unsafe.
             unsafe.append(path.name)
             continue
-        if _contents_permission(permissions) not in ("read", "read-all"):
+        if permissions == "read-all":
+            # `read-all` is only valid as a top-level shorthand, not a `contents` value.
+            continue
+        if not isinstance(permissions, dict):
+            unsafe.append(path.name)
+            continue
+        if _contents_permission(permissions) != "read":
             unsafe.append(path.name)
 
     assert unsafe == []
