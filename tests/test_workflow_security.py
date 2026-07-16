@@ -46,7 +46,8 @@ def test_workflow_actions_are_pinned_to_full_commit_shas() -> None:
     unpinned = []
     for path, step in _workflow_steps():
         uses = step.get("uses")
-        if isinstance(uses, str) and not PINNED_ACTION.match(uses):
+        # Local actions/workflows (./...) are in-repo references and need no SHA pinning.
+        if isinstance(uses, str) and not uses.startswith("./") and not PINNED_ACTION.match(uses):
             unpinned.append(
                 f"{path.name}: {uses} "
                 "(pin to the full 40-character commit SHA, e.g. owner/repo@<sha>)"
