@@ -14,6 +14,8 @@ PINNED_ACTION = re.compile(
 )
 # First-party namespaces trusted in write-token jobs (e.g. actions/*, github/codeql-action).
 TRUSTED_ACTION_PREFIXES = ("actions/", "github/")
+# Sentinel so an absent `permissions:` key is distinguishable from an explicit `{}`.
+_MISSING = object()
 
 
 def _workflow_docs() -> list[tuple[Path, dict[str, Any]]]:
@@ -82,7 +84,12 @@ def test_non_release_workflows_are_explicitly_read_only() -> None:
     for path, data in _workflow_docs():
         if path.name == "release.yml":
             continue
-        if _contents_permission(data.get("permissions")) != "read":
+        permissions = data.get("permissions")
+        if permissions is None:
+            # Keep policy explicit: a missing permissions key is treated as unsafe.
+            unsafe.append(path.name)
+            continue
+        if _contents_permission(permissions) not in ("read", "read-all"):
             unsafe.append(path.name)
 
     assert unsafe == []
@@ -93,7 +100,8 @@ def test_write_token_jobs_only_use_trusted_actions() -> None:
     for path, data in _workflow_docs():
         workflow_permissions = data.get("permissions")
         for job_name, job in data.get("jobs", {}).items():
-            permissions = job.get("permissions", workflow_permissions)
+            job_permissions = job.get("permissions", _MISSING)
+            permissions = workflow_permissions if job_permissions is _MISSING else job_permissions
             if _contents_permission(permissions) != "write":
                 continue
             for step in job.get("steps", []):
