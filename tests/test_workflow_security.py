@@ -116,7 +116,9 @@ def test_write_token_jobs_only_use_trusted_actions() -> None:
                 continue
             for step in job.get("steps", []):
                 uses = step.get("uses")
-                if isinstance(uses, str) and not uses.startswith(TRUSTED_ACTION_PREFIXES):
+                if isinstance(uses, str) and (
+                    not uses.startswith(TRUSTED_ACTION_PREFIXES) or not PINNED_ACTION.match(uses)
+                ):
                     unsafe.append(f"{path.name}:{job_name}:{uses}")
 
     assert unsafe == []
