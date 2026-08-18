@@ -10,6 +10,8 @@ permissions:
 
 jobs:
   test:
+    # Never run CI for Dependabot PRs.
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

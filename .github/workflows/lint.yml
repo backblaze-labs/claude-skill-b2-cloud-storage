@@ -10,6 +10,8 @@ permissions:
 
 jobs:
   pre-commit:
+    # Never run CI for Dependabot PRs.
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     name: pre-commit (ruff, markdownlint, yamllint, cspell, mypy)
     steps:
